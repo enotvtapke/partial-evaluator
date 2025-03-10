@@ -25,9 +25,9 @@ source-repository head
 
 library
   exposed-modules:
-      AST
-      DSL
-      Interpreter
+      Flowchart.AST
+      Flowchart.DSL
+      Flowchart.Interpreter
       Lib
   other-modules:
       Paths_partial_evaluator

@@ -1,6 +1,6 @@
-module Interpreter (run, runFull) where
+module Flowchart.Interpreter (run, runFull) where
 
-import AST
+import Flowchart.AST
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import qualified Data.HashMap.Lazy as M

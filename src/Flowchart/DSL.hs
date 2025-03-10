@@ -1,6 +1,6 @@
-module DSL (lab, bb, jumpc, jump, (DSL.+), (DSL.==), (@=), int, var, program, ret) where
+module Flowchart.DSL (lab, bb, jumpc, jump, (Flowchart.DSL.+), (Flowchart.DSL.==), (@=), int, var, program, ret) where
 
-import AST
+import Flowchart.AST
 
 lab :: String -> Label
 lab = Label

@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module AST
+module Flowchart.AST
   ( Program (..),
     Value (..),
     VarName (..),

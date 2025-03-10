@@ -1,9 +1,9 @@
 module InterpreterSpec (interpreterSpec) where
 
 import Test.Hspec
-import AST
-import DSL
-import Interpreter (runFull)
+import Flowchart.AST
+import Flowchart.DSL
+import Flowchart.Interpreter (runFull)
 
 import Prelude hiding ((+), (==))
 
@@ -34,8 +34,5 @@ loop = program ["x"] [
     $
     jumpc (var "x" == int 10) "ret" "loop"
     ,
-    bb "ret"
-    []
-    $
-    ret $ var "x"
+    bb "ret" [] $ ret $ var "x"
   ]
