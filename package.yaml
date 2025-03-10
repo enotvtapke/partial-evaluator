@@ -21,6 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- mtl
+- transformers
+- unordered-containers
+- hashable
 
 ghc-options:
 - -Wall
@@ -49,7 +53,7 @@ executables:
 
 tests:
   partial-evaluator-test:
-    main:                Spec.hs
+    main:                Main.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -57,3 +61,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - partial-evaluator
+    - tasty
+    - tasty-hspec
+    - hspec
