@@ -1,4 +1,21 @@
-module Flowchart.DSL (lab, bb, jumpc, jump, (Flowchart.DSL.+), (Flowchart.DSL.==), (@=), int, var, program, ret) where
+module Flowchart.DSL
+  ( lab,
+    bb,
+    jumpc,
+    jump,
+    (Flowchart.DSL.+),
+    (Flowchart.DSL.==),
+    (@=),
+    int,
+    var,
+    program,
+    ret,
+    cdr,
+    car,
+    cons,
+    unit,
+  )
+where
 
 import Flowchart.AST
 
@@ -37,6 +54,18 @@ int = Constant . IntLiteral
 
 var :: String -> Expr
 var = Var . VarName
+
+cons :: Expr -> Expr -> Expr
+cons = Cons
+
+car :: Expr -> Expr
+car = Car
+
+cdr :: Expr -> Expr
+cdr = Cdr
+
+unit :: Expr
+unit = Constant Unit
 
 program :: [String] -> [BasicBlock] -> Program
 program vars = Program (VarName <$> vars)

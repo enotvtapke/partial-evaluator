@@ -29,6 +29,7 @@ library
       Flowchart.DSL
       Flowchart.Interpreter
       Lib
+      Turing.AST
   other-modules:
       Paths_partial_evaluator
   autogen-modules:
@@ -67,6 +68,7 @@ test-suite partial-evaluator-test
   main-is: Main.hs
   other-modules:
       InterpreterSpec
+      TestPrograms
       Paths_partial_evaluator
   autogen-modules:
       Paths_partial_evaluator

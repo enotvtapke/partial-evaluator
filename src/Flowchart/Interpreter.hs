@@ -76,6 +76,9 @@ evalExpr (Constant v) = return v
 evalExpr (Var name) = getVar name
 evalExpr (Eq e1 e2) = evalBinExpr e1 e2 eq
 evalExpr (Plus e1 e2) = evalBinExpr e1 e2 plus
+evalExpr (Car e) = evalUnExpr e car
+evalExpr (Cdr e) = evalUnExpr e cdr
+evalExpr (Cons e1 e2) = evalBinExpr e1 e2 cons
 evalExpr e = lift $ throwE $ UnimplementedExpr e
 
 evalBinExpr :: Expr -> Expr -> (Value -> Value -> RunMonad Value) -> RunMonad Value
@@ -84,12 +87,26 @@ evalBinExpr e1 e2 f = do
   ev2Val <- evalExpr e2
   f e1Val ev2Val
 
+evalUnExpr :: Expr -> (Value -> RunMonad Value) -> RunMonad Value
+evalUnExpr e f = evalExpr e >>= f
+
 plus :: Value -> Value -> RunMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
 plus x y = lift $ throwE $ IncorrectValuesTypes [x, y] "in plus args"
 
 eq :: Value -> Value -> RunMonad Value
 eq x y = return $ BoolLiteral $ x == y
+
+car :: Value -> RunMonad Value
+car (Pair x _) = return x
+car x = lift $ throwE $ IncorrectValuesTypes [x] "in car args"
+
+cdr :: Value -> RunMonad Value
+cdr (Pair _ y) = return y
+cdr x = lift $ throwE $ IncorrectValuesTypes [x] "in car args"
+
+cons :: Value -> Value -> RunMonad Value
+cons x y = return $ Pair x y
 
 debugWrite :: String -> RunMonad ()
 debugWrite s = lift $ lift $ putStrLn s
