@@ -27,7 +27,8 @@ library
   exposed-modules:
       Flowchart.AST
       Flowchart.DSL
-      Flowchart.Interpreter
+      Flowchart.Interpreter.EvalState
+      Flowchart.Interpreter.Interpreter
       Lib
       Turing.Interpreter
   other-modules:
@@ -69,7 +70,9 @@ test-suite partial-evaluator-test
   other-modules:
       Flowchart.InterpreterSpec
       Flowchart.TestPrograms
+      TestUtils
       Turing.InterpreterSpec
+      Turing.TestPrograms
       Paths_partial_evaluator
   autogen-modules:
       Paths_partial_evaluator

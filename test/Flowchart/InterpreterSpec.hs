@@ -2,14 +2,14 @@
 
 module Flowchart.InterpreterSpec (interpreterSpec) where
 
-import Flowchart.AST
-import Flowchart.Interpreter (runFull)
-import Test.Hspec
+import Flowchart.DSL
 import Flowchart.TestPrograms
+import Test.Hspec
+import TestUtils
 import Prelude hiding ((+), (==))
 
 interpreterSpec :: Spec
-interpreterSpec = describe "Interpreter" $ do
+interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_basic
   spec_case
   spec_list
@@ -18,32 +18,29 @@ spec_basic :: Spec
 spec_basic =
   describe "basic" $ do
     it "interpretes return 2" $
-      runFull returnTwo [] `shouldBe` Right (IntLiteral 2)
+      (returnTwo, []) `interShouldBe` int 2
     it "interpretes loop" $
-      runFull loop [IntLiteral 1] `shouldBe` Right (IntLiteral 10)
+      (loop, [int 1]) `interShouldBe` int 10
     it "interpretes pair" $
-      runFull swapPair [] `shouldBe` Right (Pair (IntLiteral 2) (IntLiteral 1))
+      (swapPair, []) `interShouldBe` cons (int 2) (int 1)
     it "interpretes string" $
-      runFull returnStr [] `shouldBe` Right (StringLiteral "str")
+      (returnStr, []) `interShouldBe` s "str"
     it "interpretes suffixFrom" $
-      runFull suffixFromProgram []
-        `shouldBe` Right (Pair (StringLiteral "b") $ Pair (StringLiteral "c") $ Pair (StringLiteral "d") Unit)
+      (suffixFromProgram, [])
+        `interShouldBe` list [s "b", s "c", s "d"]
 
 spec_case :: Spec
 spec_case =
   describe "case" $ do
     it "not default case" $
-      runFull caseProgram [StringLiteral "write"] `shouldBe` Right (StringLiteral "write")
+      (caseProgram, [s "write"]) `interShouldBe` s "write"
     it "default case" $
-      runFull caseProgram [StringLiteral "_"] `shouldBe` Right (StringLiteral "error")
+      (caseProgram, [s "_"]) `interShouldBe` s "error"
 
 spec_list :: Spec
 spec_list =
   describe "list" $ do
     it "interpretes list" $
-      runFull returnList [] `shouldBe` Right (Pair (IntLiteral 1) (Pair (IntLiteral 2) Unit))
+      (returnList, []) `interShouldBe` list [int 1, int 2]
     it "interpretes indexOf" $
-      runFull
-        indexOf
-        [Pair (StringLiteral "a") (Pair (StringLiteral "b") (Pair (StringLiteral "c") Unit)), StringLiteral "b"]
-        `shouldBe` Right (IntLiteral 1)
+      (indexOf, [list [s "a", s "b", s "c"], s "b"]) `interShouldBe` int 1
