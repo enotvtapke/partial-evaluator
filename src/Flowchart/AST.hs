@@ -45,7 +45,7 @@ data Expr
 
 instance IsString Expr where
   fromString :: String -> Expr
-  fromString = Constant . StringLiteral
+  fromString = Var . VarName
 
 data Jump = Goto Label | If Expr Label Label | Return Expr deriving (Eq, Show)
 

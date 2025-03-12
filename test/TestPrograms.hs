@@ -74,18 +74,18 @@ returnStr =
     [ bb
         "retStr"
         []
-        $ ret "str"
+        $ ret $ s "str"
     ]
 
 caseProgram :: Program
 caseProgram =
   program
     ["operator"]
-    [ bb "init" [] $ jumpc (var "operator" == "right") "ret" "cont1",
-      bb "cont1" [] $ jumpc (var "operator" == "left") "ret" "cont2",
-      bb "cont2" [] $ jumpc (var "operator" == "write") "ret" "cont3",
-      bb "cont3" [] $ jumpc (var "operator" == "goto") "ret" "cont4",
-      bb "cont4" [] $ jumpc (var "operator" == "if") "ret" "error",
-      bb "error" [] $ ret "error",
+    [ bb "init" [] $ jumpc ("operator" == s "right") "ret" "cont1",
+      bb "cont1" [] $ jumpc ("operator" == s "left") "ret" "cont2",
+      bb "cont2" [] $ jumpc ("operator" == s "write") "ret" "cont3",
+      bb "cont3" [] $ jumpc ("operator" == s "goto") "ret" "cont4",
+      bb "cont4" [] $ jumpc ("operator" == s "if") "ret" "error",
+      bb "error" [] $ ret $ s "error",
       bb "ret" [] $ ret $ var "operator"
     ]

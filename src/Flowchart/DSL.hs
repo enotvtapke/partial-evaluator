@@ -14,6 +14,8 @@ module Flowchart.DSL
     car,
     cons,
     unit,
+    list,
+    s,
   )
 where
 
@@ -63,6 +65,12 @@ car = Car
 
 cdr :: Expr -> Expr
 cdr = Cdr
+
+list :: [Expr] -> Expr
+list = foldr cons unit
+
+s :: String -> Expr
+s = Constant . StringLiteral
 
 unit :: Expr
 unit = Constant Unit
