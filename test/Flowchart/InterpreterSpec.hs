@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module InterpreterSpec (interpreterSpec) where
+module Flowchart.InterpreterSpec (interpreterSpec) where
 
 import Flowchart.AST
 import Flowchart.Interpreter (runFull)
 import Test.Hspec
-import TestPrograms
+import Flowchart.TestPrograms
 import Prelude hiding ((+), (==))
 
 interpreterSpec :: Spec
@@ -25,6 +25,9 @@ spec_basic =
       runFull swapPair [] `shouldBe` Right (Pair (IntLiteral 2) (IntLiteral 1))
     it "interpretes string" $
       runFull returnStr [] `shouldBe` Right (StringLiteral "str")
+    it "interpretes suffixFrom" $
+      runFull suffixFromProgram []
+        `shouldBe` Right (Pair (StringLiteral "b") $ Pair (StringLiteral "c") $ Pair (StringLiteral "d") Unit)
 
 spec_case :: Spec
 spec_case =

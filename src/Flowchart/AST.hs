@@ -41,6 +41,7 @@ data Expr
   | Car Expr
   | Cdr Expr
   | Cons Expr Expr
+  | SuffixFrom Expr Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

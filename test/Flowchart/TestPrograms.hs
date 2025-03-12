@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TestPrograms
+module Flowchart.TestPrograms
   ( returnTwo,
     loop,
     swapPair,
@@ -8,6 +8,7 @@ module TestPrograms
     returnStr,
     indexOf,
     caseProgram,
+    suffixFromProgram,
   )
 where
 
@@ -89,3 +90,8 @@ caseProgram =
       bb "error" [] $ ret $ s "error",
       bb "ret" [] $ ret $ var "operator"
     ]
+
+suffixFromProgram :: Program
+suffixFromProgram =
+  program []
+    [ bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ suffixFrom "x" (int 1)]

@@ -1,4 +1,4 @@
-module Flowchart.Interpreter (run, runFull) where
+module Flowchart.Interpreter (runFull, runFullExpr) where
 
 import Flowchart.AST
 import Control.Monad.State.Lazy
@@ -17,6 +17,7 @@ data Error
   | UnimplementedExpr Expr
   | IncorrectType String
   | IncorrectValuesTypes [Value] String
+  | IndexOutOfBounds String
   deriving (Show, Eq)
 
 type RunMonad = StateT RunState (ExceptT Error IO)
@@ -50,6 +51,16 @@ run (Program names body) values = do
   putLabels body
   maybe (lift $ throwE EmptyProgram) (evalBlock . fst) (uncons body)
 
+runFullExpr :: Program -> [Expr] -> Either Error Value
+runFullExpr p v = unsafePerformIO $ runExceptT $ evalStateT (runExpr p v) (RunState M.empty M.empty)
+
+runExpr :: Program -> [Expr] -> RunMonad Value
+runExpr (Program names body) exprs = do
+  values <- mapM evalExpr exprs 
+  put $ RunState (M.fromList $ zip names values) M.empty
+  putLabels body
+  maybe (lift $ throwE EmptyProgram) (evalBlock . fst) (uncons body)
+
 putLabels :: [BasicBlock] -> RunMonad ()
 putLabels = mapM_ (\bb@(BasicBlock l _ _) -> putLabel l bb)
 
@@ -79,7 +90,7 @@ evalExpr (Plus e1 e2) = evalBinExpr e1 e2 plus
 evalExpr (Car e) = evalUnExpr e car
 evalExpr (Cdr e) = evalUnExpr e cdr
 evalExpr (Cons e1 e2) = evalBinExpr e1 e2 cons
-evalExpr e = lift $ throwE $ UnimplementedExpr e
+evalExpr (SuffixFrom l i) = evalBinExpr l i suffixFrom
 
 evalBinExpr :: Expr -> Expr -> (Value -> Value -> RunMonad Value) -> RunMonad Value
 evalBinExpr e1 e2 f = do
@@ -92,21 +103,27 @@ evalUnExpr e f = evalExpr e >>= f
 
 plus :: Value -> Value -> RunMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
-plus x y = lift $ throwE $ IncorrectValuesTypes [x, y] "in plus args"
+plus x y = lift $ throwE $ IncorrectValuesTypes [x, y] "in `plus` args"
 
 eq :: Value -> Value -> RunMonad Value
 eq x y = return $ BoolLiteral $ x == y
 
 car :: Value -> RunMonad Value
 car (Pair x _) = return x
-car x = lift $ throwE $ IncorrectValuesTypes [x] "in car args"
+car x = lift $ throwE $ IncorrectValuesTypes [x] "in `car` args"
 
 cdr :: Value -> RunMonad Value
 cdr (Pair _ y) = return y
-cdr x = lift $ throwE $ IncorrectValuesTypes [x] "in car args"
+cdr x = lift $ throwE $ IncorrectValuesTypes [x] "in `cdr` args"
 
 cons :: Value -> Value -> RunMonad Value
 cons x y = return $ Pair x y
 
-debugWrite :: String -> RunMonad ()
-debugWrite s = lift $ lift $ putStrLn s
+suffixFrom :: Value -> Value -> RunMonad Value
+suffixFrom p@(Pair _ _) (IntLiteral 0) = return p
+suffixFrom (Pair _ xs) (IntLiteral n) = suffixFrom xs (IntLiteral (n - 1))
+suffixFrom (Pair _ Unit) _ = lift $ throwE $ IndexOutOfBounds "in `suffixFrom`"
+suffixFrom l x = lift $ throwE $ IncorrectValuesTypes [l, x] "in `suffixFrom` args"
+
+-- debugWrite :: String -> RunMonad ()
+-- debugWrite s = lift $ lift $ putStrLn s

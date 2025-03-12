@@ -29,7 +29,7 @@ library
       Flowchart.DSL
       Flowchart.Interpreter
       Lib
-      Turing.AST
+      Turing.Interpreter
   other-modules:
       Paths_partial_evaluator
   autogen-modules:
@@ -67,8 +67,9 @@ test-suite partial-evaluator-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      InterpreterSpec
-      TestPrograms
+      Flowchart.InterpreterSpec
+      Flowchart.TestPrograms
+      Turing.InterpreterSpec
       Paths_partial_evaluator
   autogen-modules:
       Paths_partial_evaluator

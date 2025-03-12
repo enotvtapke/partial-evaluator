@@ -16,6 +16,7 @@ module Flowchart.DSL
     unit,
     list,
     s,
+    suffixFrom,
   )
 where
 
@@ -71,6 +72,9 @@ list = foldr cons unit
 
 s :: String -> Expr
 s = Constant . StringLiteral
+
+suffixFrom :: Expr -> Expr -> Expr
+suffixFrom = SuffixFrom
 
 unit :: Expr
 unit = Constant Unit

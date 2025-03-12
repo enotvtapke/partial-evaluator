@@ -2,7 +2,8 @@ module Main (main) where
 
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.Hspec (testSpecs)
-import InterpreterSpec (interpreterSpec)
+import qualified Flowchart.InterpreterSpec as F (interpreterSpec)
+import qualified Turing.InterpreterSpec as T (interpreterSpec) 
 
 main :: IO ()
 main = do
@@ -10,7 +11,8 @@ main = do
     concat
       <$> mapM
         testSpecs
-        [ interpreterSpec
+        [ F.interpreterSpec,
+          T.interpreterSpec
         ]
   defaultMain
     ( testGroup
