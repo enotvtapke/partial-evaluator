@@ -9,12 +9,15 @@ module Flowchart.TestPrograms
     indexOf,
     caseProgram,
     suffixFromProgram,
+    insertProgram,
+    lookupProgram,
+    memberProgram,
   )
 where
 
 import Flowchart.AST
 import Flowchart.DSL
-import Prelude hiding ((+), (==))
+import Prelude hiding (lookup, (+), (==))
 
 returnTwo :: Program
 returnTwo =
@@ -75,7 +78,8 @@ returnStr =
     [ bb
         "retStr"
         []
-        $ ret $ s "str"
+        $ ret
+        $ s "str"
     ]
 
 caseProgram :: Program
@@ -93,5 +97,36 @@ caseProgram =
 
 suffixFromProgram :: Program
 suffixFromProgram =
-  program []
-    [ bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ suffixFrom "x" (int 1)]
+  program
+    []
+    [bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ suffixFrom "x" (int 1)]
+
+insertProgram :: Program
+insertProgram =
+  program
+    ["k"]
+    [ bb
+        "init"
+        [ "m" @= list [cons (s "b") (int 3), cons (s "a") (int 11)],
+          "m" @= insert "m" (cons (s "a") (int 10)) unit,
+          "m" @= insert "m" "k" (int 2)
+        ]
+        $ ret "m"
+    ]
+
+lookupProgram :: Program
+lookupProgram =
+  program
+    ["k"]
+    [ bb
+        "init"
+        [ "m" @= list [cons (s "b") (int 3), cons (s "a") (int 11), cons (cons (s "c") (int 10)) (s "cv")]
+        ]
+        $ ret (lookup "m" "k")
+    ]
+
+memberProgram :: Program
+memberProgram =
+  program
+    ["e"]
+    [bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ member "x" "e"]

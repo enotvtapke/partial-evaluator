@@ -15,12 +15,12 @@ where
 
 import Data.Hashable
 import Data.String (IsString(..))
-
 data Program = Program [VarName] [BasicBlock] deriving (Eq, Show)
 
 data Value
   = IntLiteral Int
-  | AST Program
+  | Expr Expr
+  | Prog Program
   | BoolLiteral Bool
   | StringLiteral String
   | Pair Value Value
@@ -29,7 +29,7 @@ data Value
 
 newtype VarName = VarName String deriving (Eq, Hashable, Show)
 
-data BasicBlock = BasicBlock Label [Assignment] Jump deriving (Eq, Show)
+data BasicBlock = BasicBlock { label :: Label, assigns :: [Assignment], jmp :: Jump } deriving (Eq, Show)
 
 data Assignment = Assignment VarName Expr deriving (Eq, Show)
 
@@ -42,6 +42,10 @@ data Expr
   | Cdr Expr
   | Cons Expr Expr
   | SuffixFrom Expr Expr
+  | Insert Expr Expr Expr
+  | Lookup Expr Expr  -- Lookup in map on pairs
+  | Member Expr Expr -- Searching in list
+  | Commands Expr Expr -- get list of commands in basic block. Takes program and label
   deriving (Eq, Show)
 
 instance IsString Expr where

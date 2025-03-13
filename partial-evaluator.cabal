@@ -29,6 +29,7 @@ library
       Flowchart.DSL
       Flowchart.Interpreter.EvalState
       Flowchart.Interpreter.Interpreter
+      Flowchart.Mix
       Lib
       Turing.Interpreter
   other-modules:

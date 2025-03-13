@@ -24,7 +24,7 @@ data Error
   | UndefinedLabel Label
   | UnimplementedExpr Expr
   | IncorrectType String
-  | IncorrectValuesTypes [Value] String
+  | IncorrectArgsTypes [Value] String
   | IndexOutOfBounds String
   deriving (Show, Eq)
 

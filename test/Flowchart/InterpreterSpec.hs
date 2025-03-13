@@ -13,6 +13,7 @@ interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_basic
   spec_case
   spec_list
+  spec_map
 
 spec_basic :: Spec
 spec_basic =
@@ -44,3 +45,16 @@ spec_list =
       (returnList, []) `interShouldBe` list [int 1, int 2]
     it "interpretes indexOf" $
       (indexOf, [list [s "a", s "b", s "c"], s "b"]) `interShouldBe` int 1
+    it "interpretes member when element is found" $
+      (memberProgram, [s "b"]) `interShouldBe` true
+    it "interpretes member when element is not found" $
+      (memberProgram, [s "e"]) `interShouldBe` false
+
+spec_map :: Spec
+spec_map = describe "map" $ do
+    it "interpretes insert" $
+      (insertProgram, [s "b"]) `interShouldBe` list [cons (s "b") (int 2), cons (s "a") (int 11), cons (cons (s "a") (int 10)) unit]
+    it "interpretes lookup" $
+      (lookupProgram, [cons (s "c") (int 10)]) `interShouldBe` s "cv"
+    it "interpretes lookup when value not found" $
+      (lookupProgram, [cons (s "d") (int 10)]) `interShouldBe` unit

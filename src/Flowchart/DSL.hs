@@ -7,6 +7,8 @@ module Flowchart.DSL
     (Flowchart.DSL.==),
     (@=),
     int,
+    true,
+    false,
     var,
     program,
     ret,
@@ -17,10 +19,18 @@ module Flowchart.DSL
     list,
     s,
     suffixFrom,
+    lookup,
+    insert,
+    member,
+    listv,
+    intv,
+    sv,
+    ev,
   )
 where
 
 import Flowchart.AST
+import Prelude hiding (lookup)
 
 lab :: String -> Label
 lab = Label
@@ -36,6 +46,12 @@ jump = Goto . lab
 
 ret :: Expr -> Jump
 ret = Return
+
+true :: Expr
+true = Constant $ BoolLiteral True
+
+false :: Expr
+false = Constant $ BoolLiteral False
 
 infixl 6 +
 
@@ -70,6 +86,15 @@ cdr = Cdr
 list :: [Expr] -> Expr
 list = foldr cons unit
 
+lookup :: Expr -> Expr -> Expr
+lookup = Lookup
+
+insert :: Expr -> Expr -> Expr -> Expr
+insert = Insert
+
+member :: Expr -> Expr -> Expr
+member = Member
+
 s :: String -> Expr
 s = Constant . StringLiteral
 
@@ -81,3 +106,17 @@ unit = Constant Unit
 
 program :: [String] -> [BasicBlock] -> Program
 program vars = Program (VarName <$> vars)
+
+-- DSL for values
+
+listv :: [Value] -> Value
+listv = foldr Pair Unit
+
+intv :: Int -> Value
+intv = IntLiteral
+
+sv :: String -> Value
+sv = StringLiteral
+
+ev :: Expr -> Value
+ev = Expr
