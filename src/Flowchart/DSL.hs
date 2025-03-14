@@ -22,6 +22,9 @@ module Flowchart.DSL
     lookup,
     insert,
     member,
+    reduce,
+    eval,
+    expr,
     listv,
     intv,
     sv,
@@ -106,6 +109,15 @@ unit = Constant Unit
 
 program :: [String] -> [BasicBlock] -> Program
 program vars = Program (VarName <$> vars)
+
+reduce :: Expr -> Expr -> Expr
+reduce = Reduce
+
+eval :: Expr -> Expr -> Expr
+eval = Eval
+
+expr :: Expr -> Expr
+expr = Constant . Expr
 
 -- DSL for values
 

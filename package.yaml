@@ -36,20 +36,38 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+# - -fprof-auto 
+# - -fprof-cafs
+
+# ghc-prof-options:
+# - -fprof-auto 
+# - -fprof-cafs
 
 library:
   source-dirs: src
 
 executables:
-  partial-evaluator-exe:
+  partial-evaluator-test-exe:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - partial-evaluator
+    - tasty
+    - tasty-hspec
+    - hspec
+  # partial-evaluator-exe:
+  #   main:                Main.hs
+  #   source-dirs:         app
+  #   ghc-options:
+  #   - -threaded
+  #   - -rtsopts
+  #   - -with-rtsopts=-N
+  #   dependencies:
+  #   - partial-evaluator
 
 tests:
   partial-evaluator-test:

@@ -6,6 +6,8 @@ module Flowchart.Interpreter.EvalState
     getLabel,
     getVar,
     runEvalMonad,
+    EvalState(..),
+    getVarMaybe,
   )
 where
 
@@ -20,6 +22,7 @@ data EvalState = EvalState {vars :: M.HashMap VarName Value, labels :: M.HashMap
 data Error
   = Error
   | EmptyProgram
+  | NotReducedExpressionEvaluation Expr
   | UndefinedVariable VarName
   | UndefinedLabel Label
   | UnimplementedExpr Expr
@@ -52,3 +55,8 @@ getVar varName = do
   case M.lookup varName vs of
     Just x -> return x
     Nothing -> lift $ throwE $ UndefinedVariable varName
+
+getVarMaybe :: VarName -> EvalMonad (Maybe Value)
+getVarMaybe varName = do
+  vs <- gets vars
+  return $ M.lookup varName vs

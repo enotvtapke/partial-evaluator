@@ -46,6 +46,8 @@ data Expr
   | Lookup Expr Expr  -- Lookup in map on pairs
   | Member Expr Expr -- Searching in list
   | Commands Expr Expr -- get list of commands in basic block. Takes program and label
+  | Eval Expr Expr
+  | Reduce Expr Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

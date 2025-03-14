@@ -12,6 +12,8 @@ module Flowchart.TestPrograms
     insertProgram,
     lookupProgram,
     memberProgram,
+    reduceProgram,
+    evalProgram,
   )
 where
 
@@ -130,3 +132,15 @@ memberProgram =
   program
     ["e"]
     [bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ member "x" "e"]
+
+reduceProgram :: Program
+reduceProgram =
+  program
+    ["vars"]
+    [bb "init" ["z" @= expr (car (cons ("x" + int 3) (s "s")) + "y")] $ ret $ reduce "z" "vars"]
+
+evalProgram :: Program
+evalProgram =
+  program
+    ["vars"]
+    [bb "init" ["z" @= expr (car (cons ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]

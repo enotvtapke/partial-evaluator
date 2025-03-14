@@ -1,12 +1,23 @@
-module Flowchart.Interpreter.Interpreter (interpret, interpretValues, evalExpr, putLabels) where
+{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+module Flowchart.Interpreter.Interpreter
+  ( interpret,
+    interpretValues,
+    evalExpr,
+  )
+where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
-import Data.List (uncons, find)
+import qualified Data.HashMap.Lazy as M
+import Data.List (uncons)
 import Flowchart.AST
+import Flowchart.Interpreter.Builtin
 import Flowchart.Interpreter.EvalState
-import Flowchart.DSL (ev, sv, listv)
 import Prelude hiding (lookup)
+import GHC.IO (unsafePerformIO)
+import Control.Monad.Except (runExceptT)
 
 interpretValues :: Program -> [Value] -> EvalMonad Value
 interpretValues p values = interpret p (Constant <$> values)
@@ -40,99 +51,79 @@ evalJump (If cond l1 l2) = do
     _ -> lift $ throwE $ IncorrectArgsTypes [condVal] "in if condition"
 
 evalExpr :: Expr -> EvalMonad Value
-evalExpr (Constant v) = return v
-evalExpr (Var name) = getVar name
-evalExpr (Eq e1 e2) = evalBinExpr e1 e2 eq
-evalExpr (Plus e1 e2) = evalBinExpr e1 e2 plus
-evalExpr (Car e) = evalUnExpr e car
-evalExpr (Cdr e) = evalUnExpr e cdr
-evalExpr (Cons e1 e2) = evalBinExpr e1 e2 cons
-evalExpr (SuffixFrom l i) = evalBinExpr l i suffixFrom
-evalExpr (Member l i) = evalBinExpr l i member
-evalExpr (Insert m k v) = evalTerExpr m k v insert
-evalExpr (Lookup m k) = evalBinExpr m k lookup
-evalExpr (Commands p l) = evalBinExpr p l commands
+evalExpr e = reduceExpr e >>= exprToVal
 
-evalBinExpr :: Expr -> Expr -> (Value -> Value -> EvalMonad Value) -> EvalMonad Value
-evalBinExpr e1 e2 f = do
-  e1Val <- evalExpr e1
-  ev2Val <- evalExpr e2
-  f e1Val ev2Val
+exprToVal :: Expr -> EvalMonad Value
+exprToVal (Constant ee) = return ee
+exprToVal e = lift $ throwE $ NotReducedExpressionEvaluation e
 
-evalTerExpr :: Expr -> Expr -> Expr -> (Value -> Value -> Value -> EvalMonad Value) -> EvalMonad Value
-evalTerExpr e1 e2 e3 f = do
-  e1Val <- evalExpr e1
-  ev2Val <- evalExpr e2
-  ev3Val <- evalExpr e3
-  f e1Val ev2Val ev3Val
+reduceExpr :: Expr -> EvalMonad Expr
+reduceExpr c@(Constant _) = return c
+reduceExpr va@(Var name) = do
+  v <- getVarMaybe name
+  case v of
+    Just x -> return (Constant x)
+    Nothing -> return va
+reduceExpr (Eq e1 e2) = reduceBinExpr e1 e2 Eq eq
+reduceExpr (Plus e1 e2) = reduceBinExpr e1 e2 Plus plus
+reduceExpr (Car e) = reduceUnExpr e Car car
+reduceExpr (Cdr e) = reduceUnExpr e Cdr cdr
+reduceExpr (Cons e1 e2) = reduceBinExpr e1 e2 Cons cons
+reduceExpr (SuffixFrom l i) = reduceBinExpr l i SuffixFrom suffixFrom
+reduceExpr (Member l i) = reduceBinExpr l i Member member
+reduceExpr (Insert m k v) = reduceTerExpr m k v Insert insert
+reduceExpr (Lookup m k) = reduceBinExpr m k Lookup lookup
+reduceExpr (Commands p l) = reduceBinExpr p l Commands commands
+reduceExpr (Eval e vars) = reduceBinExpr e vars Eval eval
+reduceExpr (Reduce e vars) = reduceBinExpr e vars Reduce reduce
 
-evalUnExpr :: Expr -> (Value -> EvalMonad Value) -> EvalMonad Value
-evalUnExpr e f = evalExpr e >>= f
+reduceUnExpr :: Expr -> (Expr -> Expr) -> (Value -> EvalMonad Value) -> EvalMonad Expr
+reduceUnExpr e c f =
+  reduceExpr e
+    >>= ( \case
+            Constant x -> Constant <$> f x
+            x -> return $ c x
+        )
 
-plus :: Value -> Value -> EvalMonad Value
-plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
-plus x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `plus` args"
+reduceBinExpr :: Expr -> Expr -> (Expr -> Expr -> Expr) -> (Value -> Value -> EvalMonad Value) -> EvalMonad Expr
+reduceBinExpr e1 e2 c f = do
+  e1Val <- reduceExpr e1
+  e2Val <- reduceExpr e2
+  case (e1Val, e2Val) of
+    (Constant x, Constant y) -> Constant <$> f x y
+    (x, y) -> return $ c x y
 
-eq :: Value -> Value -> EvalMonad Value
-eq x y = return $ BoolLiteral $ x == y
+reduceTerExpr :: Expr -> Expr -> Expr -> (Expr -> Expr -> Expr -> Expr) -> (Value -> Value -> Value -> EvalMonad Value) -> EvalMonad Expr
+reduceTerExpr e1 e2 e3 c f = do
+  e1Val <- reduceExpr e1
+  e2Val <- reduceExpr e2
+  e3Val <- reduceExpr e3
+  case (e1Val, e2Val, e3Val) of
+    (Constant x, Constant y, Constant z) -> Constant <$> f x y z
+    (x, y, z) -> return $ c x y z
 
-car :: Value -> EvalMonad Value
-car (Pair x _) = return x
-car x = lift $ throwE $ IncorrectArgsTypes [x] "in `car` args"
+-- Very special builtin functions for mix
 
-cdr :: Value -> EvalMonad Value
-cdr (Pair _ y) = return y
-cdr x = lift $ throwE $ IncorrectArgsTypes [x] "in `cdr` args"
+eval :: Value -> Value -> EvalMonad Value
+eval (Expr e) vars = do
+  Expr ee <- reduce (Expr e) vars
+  exprToVal ee
+eval x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `eval` args"
 
-cons :: Value -> Value -> EvalMonad Value
-cons x y = return $ Pair x y
-
-suffixFrom :: Value -> Value -> EvalMonad Value
-suffixFrom p@(Pair _ _) (IntLiteral 0) = return p
-suffixFrom (Pair _ xs) (IntLiteral n) = suffixFrom xs (IntLiteral (n - 1))
-suffixFrom (Pair _ Unit) _ = lift $ throwE $ IndexOutOfBounds "in `suffixFrom`"
-suffixFrom l x = lift $ throwE $ IncorrectArgsTypes [l, x] "in `suffixFrom` args"
-
-member :: Value -> Value -> EvalMonad Value
-member (Pair x _) e | e == x = return $ BoolLiteral True
-member (Pair _ Unit) _ = return $ BoolLiteral False
-member (Pair _ xs) e = member xs e
-member p e = lift $ throwE $ IncorrectArgsTypes [p, e] "in `member` args"
-
-insert :: Value -> Value -> Value -> EvalMonad Value
-insert (Pair (Pair k _) ms) k1 v | k1 == k = return $ Pair (Pair k1 v) ms
-insert Unit k v = return $ Pair (Pair k v) Unit
-insert (Pair p ms) k v = Pair p <$> insert ms k v
-insert p k v = lift $ throwE $ IncorrectArgsTypes [p, k, v] "in `insert` args"
-
-lookup :: Value -> Value -> EvalMonad Value
-lookup (Pair (Pair k v) _) k1 | k1 == k = return v
-lookup Unit _ = return Unit
-lookup (Pair (Pair _ _) ms) k = lookup ms k
-lookup p k = lift $ throwE $ IncorrectArgsTypes [p, k] "in `lookup` args"
-
-
--- debugWrite :: String -> RunMonad ()
--- debugWrite s = lift $ lift $ putStrLn s
-
--- Built-in functions for mix
-
-commands :: Value -> Value -> EvalMonad Value
-commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlock (Label l) body
+reduce :: Value -> Value -> EvalMonad Value
+reduce (Expr e) vars = do
+  vv <- varsToMap vars
+  Expr <$> reduceInternal e vv
   where
-    findBlock :: Label -> [BasicBlock] -> EvalMonad BasicBlock
-    findBlock ll blocks = maybe (lift $ throwE Error) return (find (\(BasicBlock l1 _ _) -> ll Prelude.== l1) blocks)
-    commandsByBlock :: BasicBlock -> Value
-    commandsByBlock (BasicBlock _ a j) = listv $ (assignToCommand <$> a) ++ [jumpToCommand j]
-    assignToCommand :: Assignment -> Value
-    assignToCommand (Assignment (VarName name) e) = listv [sv "assign", sv name, ev e]
-    jumpToCommand :: Jump -> Value
-    jumpToCommand (Goto (Label l)) = listv [sv "goto", sv l]
-    jumpToCommand (If e (Label l1) (Label l2)) = listv [sv "if", ev e, sv l1, sv l2]
-    jumpToCommand (Return c) = listv [sv "return", ev c]
-commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in commands"
+    reduceInternal :: Expr -> M.HashMap VarName Value -> EvalMonad Expr
+    reduceInternal e vars = case runWithVars (reduceExpr e) vars of
+      Right v -> return v
+      Left err -> lift $ throwE err
+      where
+        runWithVars m vs = unsafePerformIO $ runExceptT $ evalStateT m (EvalState vs M.empty)
 
--- eval :: Expr -> EvalMonad Value
--- reduce :: Expr -> EvalMonad Expr
--- toProgram :: Value -> Value (TExpr -> Prog)
--- add maps
+    varsToMap :: Value -> EvalMonad (M.HashMap VarName Value)
+    varsToMap (Pair (Pair (StringLiteral k) v) xs) = M.insert (VarName k) v <$> varsToMap xs
+    varsToMap Unit = return M.empty
+    varsToMap p = lift $ throwE $ IncorrectArgsTypes [p] "in `varsToMap` args"
+reduce x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `reduce` args"

@@ -27,6 +27,7 @@ library
   exposed-modules:
       Flowchart.AST
       Flowchart.DSL
+      Flowchart.Interpreter.Builtin
       Flowchart.Interpreter.EvalState
       Flowchart.Interpreter.Interpreter
       Flowchart.Mix
@@ -47,20 +48,28 @@ library
     , unordered-containers
   default-language: Haskell2010
 
-executable partial-evaluator-exe
+executable partial-evaluator-test-exe
   main-is: Main.hs
   other-modules:
+      Flowchart.InterpreterSpec
+      Flowchart.TestPrograms
+      TestUtils
+      Turing.InterpreterSpec
+      Turing.TestPrograms
       Paths_partial_evaluator
   autogen-modules:
       Paths_partial_evaluator
   hs-source-dirs:
-      app
+      test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , hashable
+    , hspec
     , mtl
     , partial-evaluator
+    , tasty
+    , tasty-hspec
     , transformers
     , unordered-containers
   default-language: Haskell2010

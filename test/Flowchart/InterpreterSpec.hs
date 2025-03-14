@@ -14,6 +14,7 @@ interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_case
   spec_list
   spec_map
+  spec_reduce
 
 spec_basic :: Spec
 spec_basic =
@@ -58,3 +59,10 @@ spec_map = describe "map" $ do
       (lookupProgram, [cons (s "c") (int 10)]) `interShouldBe` s "cv"
     it "interpretes lookup when value not found" $
       (lookupProgram, [cons (s "d") (int 10)]) `interShouldBe` unit
+
+spec_reduce :: Spec
+spec_reduce = describe "reduce" $ do
+    it "interpretes reduce" $
+      (reduceProgram, [list [cons (s "x") (int 2)]]) `interShouldBe` expr (int 5 + "y")
+    it "interpretes eval" $
+      (evalProgram, [list [cons (s "x") (int 2), cons (s "y") (int 4)]]) `interShouldBe` int 9
