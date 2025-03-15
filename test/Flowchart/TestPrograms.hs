@@ -15,6 +15,11 @@ module Flowchart.TestPrograms
     reduceProgram,
     evalProgram,
     commandsProgram,
+    descrProgram,
+    descrToProgProgram,
+    searchContDescr,
+    mixedSearchProgram,
+    searchProgram,
   )
 where
 
@@ -151,3 +156,61 @@ commandsProgram =
   program
     ["prog", "l"]
     [bb "init" [] $ ret $ commands "prog" "l"]
+
+descrProgram :: Program
+descrProgram =
+  program
+    ["namelist", "valuelist"]
+    [ bb
+        "[\"cont\",[]]"
+        [ "namelist" @= tl "namelist",
+          "valuelist" @= tl "valuelist"
+        ]
+        $ jump "search"
+    ]
+
+descrToProgProgram :: Program
+descrToProgProgram =
+  program
+    ["program", "staticVars"]
+    [ bb "init" [] $ ret (descrToProg "program" "staticVars" searchContDescr)
+    ]
+
+searchContDescr :: Expr
+searchContDescr =
+  list
+    [ list
+        [ list [s "goto", s "search"],
+          list [s "assign", s "valuelist", expr (tl "valuelist")],
+          list [s "assign", s "namelist", expr (tl "namelist")],
+          pair (s "cont") (list [])
+        ]
+    ]
+
+mixedSearchProgram :: Program
+mixedSearchProgram =
+  program
+    ["valuelist"]
+    [ bb
+        "[\"init\",[[\"name\",\"c\"],[\"namelist\",[\"b\",\"a\",\"c\"]]]]"
+        [ "valuelist" @= tl "valuelist",
+          "valuelist" @= tl "valuelist"
+        ]
+        $ ret
+        $ hd "valuelist"
+    ]
+
+searchProgram :: Program
+searchProgram =
+  program
+    ["name", "namelist", "valuelist"]
+    [ bb "init" [] $ jump "search",
+      bb "search" [] $ jumpc ("name" == hd "namelist") "found" "cont",
+      bb
+        "cont"
+        [ "valuelist" @= tl "valuelist",
+          "namelist" @= tl "namelist"
+        ]
+        $ jump "search",
+      bb "found" [] $ ret (hd "valuelist")
+    ]
