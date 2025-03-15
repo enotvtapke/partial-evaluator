@@ -14,9 +14,9 @@ turingInterpreter =
       bb "loop" [] $ jumpc ("qtail" == list []) "stop" "cont",
 
       bb "cont" [
-        "instruction" @= car "qtail",
-        "qtail" @= cdr "qtail",
-        "operator" @= car "instruction"
+        "instruction" @= hd "qtail",
+        "qtail" @= tl "qtail",
+        "operator" @= hd "instruction"
       ] $ jumpc ("operator" == s "right") "do-right" "cont1",
       bb "cont1" [] $ jumpc ("operator" == s "left") "do-left" "cont2",
       bb "cont2" [] $ jumpc ("operator" == s "write") "do-write" "cont3",
@@ -24,28 +24,28 @@ turingInterpreter =
       bb "cont4" [] $ jumpc ("operator" == s "if") "do-if" "error",
 
       bb "do-right" [
-        "left" @= cons (car "right") "left",
-        "right" @= cdr "right"
+        "left" @= cons (hd "right") "left",
+        "right" @= tl "right"
       ] $ jump "loop",
 
       bb "do-left" [
-        "right" @= cons (car "left") "right",
-        "left" @= cdr "left"
+        "right" @= cons (hd "left") "right",
+        "left" @= tl "left"
       ] $ jump "loop",
 
       bb "do-write" [
-        "symbol" @= car (cdr "instruction"),
-        "right" @= cons "symbol" (cdr "right")
+        "symbol" @= hd (tl "instruction"),
+        "right" @= cons "symbol" (tl "right")
       ] $ jump "loop",
 
       bb "do-goto" [
-        "label" @= car (cdr "instruction")
+        "label" @= hd (tl "instruction")
       ] $ jump "jump",
 
       bb "do-if" [
-        "symbol" @= car (cdr "instruction"),
-        "label" @= car (cdr $ cdr "instruction")
-      ] $ jumpc ("symbol" == car "right") "jump" "loop",
+        "symbol" @= hd (tl "instruction"),
+        "label" @= hd (tl $ tl "instruction")
+      ] $ jumpc ("symbol" == hd "right") "jump" "loop",
 
       bb "jump" [
         "qtail" @= suffixFrom "q" "label"

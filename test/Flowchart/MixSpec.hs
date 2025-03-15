@@ -28,7 +28,7 @@ spec_descrToProg :: Spec
 spec_descrToProg =
   describe "descrToProg" $ do
     it "interpretes descrToProg" $
-      (descrToProgProgram, [prog searchProgram, list [pair (s "name") (s "a")]]) `interShouldBe` Constant (Prog $ Program [VarName "namelist",VarName "valuelist"] [BasicBlock {label = Label "[\"cont\",[]]", assigns = [Assignment (VarName "namelist") (Cdr (Var (VarName "namelist"))),Assignment (VarName "valuelist") (Cdr (Var (VarName "valuelist")))], jmp = Goto (Label "search")}])
+      (descrToProgProgram, [prog searchProgram, list [pair (s "name") (s "a")]]) `interShouldBe` prog (Program [VarName "namelist",VarName "valuelist"] [BasicBlock {label = Label "[\"cont\",[]]", assigns = [Assignment (VarName "namelist") (Tl (Var (VarName "namelist"))),Assignment (VarName "valuelist") (Tl (Var (VarName "valuelist")))], jmp = Goto (Label "search")}])
 
 descrToProgProgram :: Program
 descrToProgProgram =
@@ -42,8 +42,8 @@ searchContDescr =
   list
     [ list
         [ list [s "goto", s "search"],
-          list [s "assign", s "valuelist", expr (cdr "valuelist")],
-          list [s "assign", s "namelist", expr (cdr "namelist")],
+          list [s "assign", s "valuelist", expr (tl "valuelist")],
+          list [s "assign", s "namelist", expr (tl "namelist")],
           pair (s "cont") (list [])
         ]
     ]
@@ -54,11 +54,11 @@ mixedSearch =
     ["valuelist"]
     [ bb
         "[\"init\",[[\"name\",\"c\"],[\"namelist\",[\"b\",\"a\",\"c\"]]]]"
-        [ "valuelist" @= cdr "valuelist",
-          "valuelist" @= cdr "valuelist"
+        [ "valuelist" @= tl "valuelist",
+          "valuelist" @= tl "valuelist"
         ]
         $ ret
-        $ car "valuelist"
+        $ hd "valuelist"
     ]
 
 searchProgram :: Program
@@ -66,12 +66,12 @@ searchProgram =
   program
     ["name", "namelist", "valuelist"]
     [ bb "init" [] $ jump "search",
-      bb "search" [] $ jumpc ("name" == car "namelist") "found" "cont",
+      bb "search" [] $ jumpc ("name" == hd "namelist") "found" "cont",
       bb
         "cont"
-        [ "valuelist" @= cdr "valuelist",
-          "namelist" @= cdr "namelist"
+        [ "valuelist" @= tl "valuelist",
+          "namelist" @= tl "namelist"
         ]
         $ jump "search",
-      bb "found" [] $ ret (car "valuelist")
+      bb "found" [] $ ret (hd "valuelist")
     ]

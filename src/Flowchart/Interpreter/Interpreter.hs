@@ -67,8 +67,8 @@ reduceExpr va@(Var name) = do
     Nothing -> return va
 reduceExpr (Eq e1 e2) = reduceBinExpr e1 e2 Eq eq
 reduceExpr (Plus e1 e2) = reduceBinExpr e1 e2 Plus plus
-reduceExpr (Car e) = reduceUnExpr e Car car
-reduceExpr (Cdr e) = reduceUnExpr e Cdr cdr
+reduceExpr (Hd e) = reduceUnExpr e Hd hd
+reduceExpr (Tl e) = reduceUnExpr e Tl tl
 reduceExpr (Cons e1 e2) = reduceBinExpr e1 e2 Cons cons
 reduceExpr (SuffixFrom l i) = reduceBinExpr l i SuffixFrom suffixFrom
 reduceExpr (Member l i) = reduceBinExpr l i Member member

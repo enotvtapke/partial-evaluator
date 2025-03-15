@@ -1,8 +1,8 @@
 module Flowchart.Interpreter.Builtin
   ( plus,
     eq,
-    car,
-    cdr,
+    hd,
+    tl,
     cons,
     suffixFrom,
     member,
@@ -30,13 +30,13 @@ plus x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `plus` args"
 eq :: Value -> Value -> EvalMonad Value
 eq x y = return $ BoolLiteral $ x == y
 
-car :: Value -> EvalMonad Value
-car (List (x : _)) = return x
-car x = lift $ throwE $ IncorrectArgsTypes [x] "in `car` args"
+hd :: Value -> EvalMonad Value
+hd (List (x : _)) = return x
+hd x = lift $ throwE $ IncorrectArgsTypes [x] "in `hd` args"
 
-cdr :: Value -> EvalMonad Value
-cdr (List (_ : xs)) = return $ List xs
-cdr x = lift $ throwE $ IncorrectArgsTypes [x] "in `cdr` args"
+tl :: Value -> EvalMonad Value
+tl (List (_ : xs)) = return $ List xs
+tl x = lift $ throwE $ IncorrectArgsTypes [x] "in `tl` args"
 
 cons :: Value -> Value -> EvalMonad Value
 cons x (List l) = return $ List (x : l)
@@ -78,7 +78,7 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
     assignToCommand :: Assignment -> Value
     assignToCommand (Assignment (VarName name) e) = listv [sv "assign", sv name, ev e]
     jumpToCommand :: Jump -> Value
-    jumpToCommand (Goto (Label l)) = listv [sv "goto", sv l]
+    jumpToCommand (Goto (Label lab)) = listv [sv "goto", sv lab]
     jumpToCommand (If e (Label l1) (Label l2)) = listv [sv "if", ev e, sv l1, sv l2]
     jumpToCommand (Return c) = listv [sv "return", ev c]
 commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"

@@ -12,8 +12,8 @@ module Flowchart.DSL
     var,
     program,
     ret,
-    cdr,
-    car,
+    hd,
+    tl,
     cons,
     unit,
     list,
@@ -89,11 +89,11 @@ cons = Cons
 pair :: Expr -> Expr -> Expr
 pair a b = list [a, b]
 
-car :: Expr -> Expr
-car = Car
+hd :: Expr -> Expr
+hd = Hd
 
-cdr :: Expr -> Expr
-cdr = Cdr
+tl :: Expr -> Expr
+tl = Tl
 
 list :: [Expr] -> Expr
 list = foldr cons ((Constant . List) [])

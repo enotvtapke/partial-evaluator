@@ -51,7 +51,7 @@ swapPair =
         "swap"
         ["x" @= cons (int 1) (int 2)]
         $ ret
-        $ cons (cdr $ var "x") (car $ var "x")
+        $ cons (tl $ var "x") (hd $ var "x")
     ]
 
 returnList :: Program
@@ -69,8 +69,8 @@ indexOf :: Program
 indexOf =
   program
     ["list", "el"]
-    [ bb "init" ["x" @= int 0] $ jumpc (car (var "list") == var "el") "ret" "loop",
-      bb "loop" ["x" @= var "x" + int 1, "list" @= cdr (var "list")] $ jumpc (car (var "list") == var "el") "ret" "loop",
+    [ bb "init" ["x" @= int 0] $ jumpc (hd (var "list") == var "el") "ret" "loop",
+      bb "loop" ["x" @= var "x" + int 1, "list" @= tl (var "list")] $ jumpc (hd (var "list") == var "el") "ret" "loop",
       bb "ret" [] $ ret $ var "x"
     ]
 
@@ -138,13 +138,13 @@ reduceProgram :: Program
 reduceProgram =
   program
     ["vars"]
-    [bb "init" ["z" @= expr (car (pair ("x" + int 3) (s "s")) + "y")] $ ret $ reduce "z" "vars"]
+    [bb "init" ["z" @= expr (hd (pair ("x" + int 3) (s "s")) + "y")] $ ret $ reduce "z" "vars"]
 
 evalProgram :: Program
 evalProgram =
   program
     ["vars"]
-    [bb "init" ["z" @= expr (car (pair ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]
+    [bb "init" ["z" @= expr (hd (pair ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]
 
 commandsProgram :: Program
 commandsProgram =

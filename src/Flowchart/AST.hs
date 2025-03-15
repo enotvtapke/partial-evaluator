@@ -50,14 +50,14 @@ data Expr
   | Var VarName
   | Plus Expr Expr
   | Eq Expr Expr
-  | Car Expr
-  | Cdr Expr
+  | Hd Expr
+  | Tl Expr
   | Cons Expr Expr
   | SuffixFrom Expr Expr
   | Insert Expr Expr Expr
-  | Lookup Expr Expr  -- Lookup in map on pairs
-  | Member Expr Expr -- Searching in list
-  | Commands Expr Expr -- get list of commands in basic block. Takes program and label
+  | Lookup Expr Expr
+  | Member Expr Expr
+  | Commands Expr Expr
   | Eval Expr Expr
   | Reduce Expr Expr
   | IsStatic Expr Expr

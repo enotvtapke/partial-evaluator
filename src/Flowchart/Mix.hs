@@ -24,9 +24,9 @@ mix =
         $ jumpc ("pending" == list []) "end" "blocksLoopInit",
       bb
         "blocksLoopInit"
-        [ "pp" @= car (car "pending"),
-          "vs" @= car (cdr (car "pending")),
-          "pending" @= cdr "pending",
+        [ "pp" @= hd (hd "pending"),
+          "vs" @= hd (tl (hd "pending")),
+          "pending" @= tl "pending",
           "marked" @= cons (pair "pp" "vs") "marked",
           "bb" @= commands "program" "pp",
           "code" @= list [pair "pp" "vs"] -- will be reversed afterwards
@@ -43,18 +43,18 @@ mix =
         $ jumpc ("bb" == list []) "blocksLoopEpilogue" "commandsLoopInit",
       bb
         "commandsLoopInit"
-        [ "command" @= car "bb",
-          "bb" @= cdr "bb"
+        [ "command" @= hd "bb",
+          "bb" @= tl "bb"
         ]
-        $ jumpc (car "command" == s "assign") "assign" "cont1",
-      bb "cont1" [] $ jumpc (car "command" == s "goto") "goto" "cont2",
-      bb "cont2" [] $ jumpc (car "command" == s "if") "if" "cont3",
-      bb "cont3" [] $ jumpc (car "command" == s "return") "return" "error",
+        $ jumpc (hd "command" == s "assign") "assign" "cont1",
+      bb "cont1" [] $ jumpc (hd "command" == s "goto") "goto" "cont2",
+      bb "cont2" [] $ jumpc (hd "command" == s "if") "if" "cont3",
+      bb "cont3" [] $ jumpc (hd "command" == s "return") "return" "error",
       -- Assign
       bb
         "assign"
-        [ "varName" @= car (cdr "command"),
-          "varExpr" @= car (cdr $ cdr "command")
+        [ "varName" @= hd (tl "command"),
+          "varExpr" @= hd (tl $ tl "command")
         ]
         $ jumpc (isStatic "varExpr" "vs") "assignStatic" "assignDyn",
       bb
@@ -68,16 +68,16 @@ mix =
       -- Goto
       bb
         "goto"
-        [ "pp'" @= car (cdr "command"),
+        [ "pp'" @= hd (tl "command"),
           "bb" @= commands "program" "pp'"
         ]
         $ jump "commandsLoop",
       -- If
       bb
         "if"
-        [ "cond" @= car (cdr "command"),
-          "ppTrue" @= car (cdr $ cdr "command"),
-          "ppFalse" @= car (cdr $ cdr $ cdr "command")
+        [ "cond" @= hd (tl "command"),
+          "ppTrue" @= hd (tl $ tl "command"),
+          "ppFalse" @= hd (tl $ tl $ tl "command")
         ]
         $ jumpc (isStatic "cond" "vs") "ifStatic" "ifDyn",
       bb
@@ -112,7 +112,7 @@ mix =
       -- Return
       bb
         "return"
-        [ "exp" @= car (cdr "command"),
+        [ "exp" @= hd (tl "command"),
           "code" @= cons (list [s "return", reduce "exp" "vs"]) "code"
         ]
         $ jump "commandsLoop",
