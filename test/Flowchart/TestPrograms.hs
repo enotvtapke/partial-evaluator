@@ -60,7 +60,7 @@ returnList =
     []
     [ bb
         "retList"
-        ["x" @= cons (int 1) (cons (int 2) unit)]
+        ["x" @= cons (int 1) (cons (int 2) (list []))]
         $ ret
         $ var "x"
     ]
@@ -110,8 +110,8 @@ insertProgram =
     ["k"]
     [ bb
         "init"
-        [ "m" @= list [cons (s "b") (int 3), cons (s "a") (int 11)],
-          "m" @= insert "m" (cons (s "a") (int 10)) unit,
+        [ "m" @= list [pair (s "b") (int 3), pair (s "a") (int 11)],
+          "m" @= insert "m" (pair (s "a") (int 10)) unit,
           "m" @= insert "m" "k" (int 2)
         ]
         $ ret "m"
@@ -123,7 +123,7 @@ lookupProgram =
     ["k"]
     [ bb
         "init"
-        [ "m" @= list [cons (s "b") (int 3), cons (s "a") (int 11), cons (cons (s "c") (int 10)) (s "cv")]
+        [ "m" @= list [pair (s "b") (int 3), pair (s "a") (int 11), pair (pair (s "c") (int 10)) (s "cv")]
         ]
         $ ret (lookup "m" "k")
     ]
@@ -138,13 +138,13 @@ reduceProgram :: Program
 reduceProgram =
   program
     ["vars"]
-    [bb "init" ["z" @= expr (car (cons ("x" + int 3) (s "s")) + "y")] $ ret $ reduce "z" "vars"]
+    [bb "init" ["z" @= expr (car (pair ("x" + int 3) (s "s")) + "y")] $ ret $ reduce "z" "vars"]
 
 evalProgram :: Program
 evalProgram =
   program
     ["vars"]
-    [bb "init" ["z" @= expr (car (cons ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]
+    [bb "init" ["z" @= expr (car (pair ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]
 
 commandsProgram :: Program
 commandsProgram =

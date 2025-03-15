@@ -135,7 +135,11 @@ reduce (Expr e) vars = do
         runWithVars m vs = unsafePerformIO $ runExceptT $ evalStateT m (EvalState vs M.empty)
 
     varsToMap :: Value -> EvalMonad (M.HashMap VarName Value)
-    varsToMap (Pair (Pair (StringLiteral k) v) xs) = M.insert (VarName k) v <$> varsToMap xs
-    varsToMap Unit = return M.empty
+    varsToMap (List l) = trace ("idd: " ++ show l) $ M.fromList <$> mapM go l
+      where
+        go :: Value -> EvalMonad (VarName, Value)
+        go (List [StringLiteral k, v]) = return (VarName k, v)
+        go x = lift $ throwE $ IncorrectArgsTypes [x] "in `varsToMap1` args"
     varsToMap p = lift $ throwE $ IncorrectArgsTypes [p] "in `varsToMap` args"
+    
 reduce x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `reduce` args"

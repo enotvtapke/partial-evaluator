@@ -25,7 +25,7 @@ data Value
   | Prog Program
   | BoolLiteral Bool
   | StringLiteral String
-  | Pair Value Value
+  | List [Value]
   | Unit
   deriving (Eq)
 
@@ -34,10 +34,10 @@ instance Show Value where
   show (IntLiteral i) = show i
   show (BoolLiteral b) = show b
   show (StringLiteral s) = show s
-  show (Pair a b) = printf "(%s, %s)" (show a) (show b)
-  show Unit = "{}"
+  show (List l) = printf "%s" (show l)
+  show Unit = "()"
   show (Expr e) = printf "`%s`" (show e)
-  show (Prog p) = printf "`%s`" (show p)
+  show (Prog p) = printf "p`%s`" (show p)
 
 newtype VarName = VarName String deriving (Eq, Hashable, Show)
 

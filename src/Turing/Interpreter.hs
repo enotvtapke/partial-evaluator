@@ -10,8 +10,8 @@ turingInterpreter :: Program
 turingInterpreter =
   program
     ["q", "right"]
-    [ bb "init" ["qtail" @= "q", "left" @= unit] $ jump "loop",
-      bb "loop" [] $ jumpc ("qtail" == unit) "stop" "cont",
+    [ bb "init" ["qtail" @= "q", "left" @= list []] $ jump "loop",
+      bb "loop" [] $ jumpc ("qtail" == list []) "stop" "cont",
 
       bb "cont" [
         "instruction" @= car "qtail",

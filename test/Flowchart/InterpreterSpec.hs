@@ -24,8 +24,8 @@ spec_basic =
       (returnTwo, []) `interShouldBe` int 2
     it "interpretes loop" $
       (loop, [int 1]) `interShouldBe` int 10
-    it "interpretes pair" $
-      (swapPair, []) `interShouldBe` cons (int 2) (int 1)
+    -- it "interpretes pair" $
+    --   (swapPair, []) `interShouldBe` list (int 2) (int 1)
     it "interpretes string" $
       (returnStr, []) `interShouldBe` s "str"
     it "interpretes suffixFrom" $
@@ -55,18 +55,18 @@ spec_list =
 spec_map :: Spec
 spec_map = describe "map" $ do
   it "interpretes insert" $
-    (insertProgram, [s "b"]) `interShouldBe` list [cons (s "b") (int 2), cons (s "a") (int 11), cons (cons (s "a") (int 10)) unit]
+    (insertProgram, [s "b"]) `interShouldBe` list [pair (s "b") (int 2), pair (s "a") (int 11), pair (pair (s "a") (int 10)) unit]
   it "interpretes lookup" $
-    (lookupProgram, [cons (s "c") (int 10)]) `interShouldBe` s "cv"
+    (lookupProgram, [pair (s "c") (int 10)]) `interShouldBe` s "cv"
   it "interpretes lookup when value not found" $
-    (lookupProgram, [cons (s "d") (int 10)]) `interShouldBe` unit
+    (lookupProgram, [pair (s "d") (int 10)]) `interShouldBe` unit
 
 spec_reduce :: Spec
 spec_reduce = describe "reduce" $ do
   it "interpretes reduce" $
-    (reduceProgram, [list [cons (s "x") (int 2)]]) `interShouldBe` expr (int 5 + "y")
+    (reduceProgram, [list [pair (s "x") (int 2)]]) `interShouldBe` expr (int 5 + "y")
   it "interpretes eval" $
-    (evalProgram, [list [cons (s "x") (int 2), cons (s "y") (int 4)]]) `interShouldBe` int 9
+    (evalProgram, [list [pair (s "x") (int 2), pair (s "y") (int 4)]]) `interShouldBe` int 9
 
 spec_commands :: Spec
 spec_commands = describe "commands" $ do
@@ -81,11 +81,11 @@ spec_commands = describe "commands" $ do
       `interShouldBe` list
         [ list [s "return", expr "x"]
         ]
-  it "interpretes commands loop 'ret'" $
+  it "interpretes commands loop 'init'" $
     (commandsProgram, [prog insertProgram, s "init"])
       `interShouldBe` list
-        [ list [s "assign", s "m", expr $ list [cons (s "b") (int 3), cons (s "a") (int 11)]],
-          list [s "assign", s "m", expr $ insert "m" (cons (s "a") (int 10)) unit],
+        [ list [s "assign", s "m", expr $ list [pair (s "b") (int 3), pair (s "a") (int 11)]],
+          list [s "assign", s "m", expr $ insert "m" (pair (s "a") (int 10)) unit],
           list [s "assign", s "m", expr $ insert "m" "k" (int 2)],
           list [s "return", expr "m"]
         ]

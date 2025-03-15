@@ -34,6 +34,7 @@ module Flowchart.DSL
     ev,
     commands,
     prog,
+    pair,
   )
 where
 
@@ -85,6 +86,9 @@ var = Var . VarName
 cons :: Expr -> Expr -> Expr
 cons = Cons
 
+pair :: Expr -> Expr -> Expr
+pair a b = list [a, b]
+
 car :: Expr -> Expr
 car = Car
 
@@ -92,7 +96,7 @@ cdr :: Expr -> Expr
 cdr = Cdr
 
 list :: [Expr] -> Expr
-list = foldr cons unit
+list = foldr cons ((Constant . List) [])
 
 -- | Map -> Value -> Value
 lookup :: Expr -> Expr -> Expr
@@ -137,6 +141,7 @@ isStatic = IsStatic
 traceE :: Expr -> Expr -> Expr
 traceE = TraceExpr
 
+-- | Prog -> StaticVars -> Descr
 descrToProg :: Expr -> Expr -> Expr -> Expr
 descrToProg = DescrToProg
 
@@ -149,7 +154,7 @@ prog = Constant . Prog
 -- DSL for values
 
 listv :: [Value] -> Value
-listv = foldr Pair Unit
+listv = List
 
 intv :: Int -> Value
 intv = IntLiteral

@@ -20,6 +20,8 @@ import Flowchart.AST
 import Flowchart.DSL (ev, listv, sv)
 import Flowchart.Interpreter.EvalState
 import Prelude hiding (lookup)
+import qualified Data.List as L
+import Data.Maybe (fromMaybe)
 
 plus :: Value -> Value -> EvalMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
@@ -29,38 +31,41 @@ eq :: Value -> Value -> EvalMonad Value
 eq x y = return $ BoolLiteral $ x == y
 
 car :: Value -> EvalMonad Value
-car (Pair x _) = return x
+car (List (x : _)) = return x
 car x = lift $ throwE $ IncorrectArgsTypes [x] "in `car` args"
 
 cdr :: Value -> EvalMonad Value
-cdr (Pair _ y) = return y
+cdr (List (_ : xs)) = return $ List xs
 cdr x = lift $ throwE $ IncorrectArgsTypes [x] "in `cdr` args"
 
 cons :: Value -> Value -> EvalMonad Value
-cons x y = return $ Pair x y
+cons x (List l) = return $ List (x : l)
+cons x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `cons` args"
 
 suffixFrom :: Value -> Value -> EvalMonad Value
-suffixFrom p@(Pair _ _) (IntLiteral 0) = return p
-suffixFrom (Pair _ xs) (IntLiteral n) = suffixFrom xs (IntLiteral (n - 1))
-suffixFrom (Pair _ Unit) _ = lift $ throwE $ IndexOutOfBounds "in `suffixFrom`"
+suffixFrom (List l) (IntLiteral n) = return $ List $ drop n l
 suffixFrom l x = lift $ throwE $ IncorrectArgsTypes [l, x] "in `suffixFrom` args"
 
 member :: Value -> Value -> EvalMonad Value
-member (Pair x _) e | e == x = return $ BoolLiteral True
-member (Pair _ Unit) _ = return $ BoolLiteral False
-member (Pair _ xs) e = member xs e
+member (List l) e = return $ if e `elem` l then BoolLiteral True else BoolLiteral False
 member p e = lift $ throwE $ IncorrectArgsTypes [p, e] "in `member` args"
 
 insert :: Value -> Value -> Value -> EvalMonad Value
-insert (Pair (Pair k _) ms) k1 v | k1 == k = return $ Pair (Pair k1 v) ms
-insert Unit k v = return $ Pair (Pair k v) Unit
-insert (Pair p ms) k v = Pair p <$> insert ms k v
+insert (List (List [k, _] : ms)) k1 v | k1 == k = return $ List $ List [k, v] : ms
+insert (List []) k v = return $ List [List [k, v]]
+insert (List (p : ms)) k v = do
+  mms <- insert (List ms) k v
+  cons p mms
 insert p k v = lift $ throwE $ IncorrectArgsTypes [p, k, v] "in `insert` args"
 
 lookup :: Value -> Value -> EvalMonad Value
-lookup (Pair (Pair k v) _) k1 | k1 == k = return v
-lookup Unit _ = return Unit
-lookup (Pair (Pair _ _) ms) k = lookup ms k
+lookup (List l) k = do
+  ml <- mapM go l
+  return $ fromMaybe Unit (L.lookup k ml)
+  where
+    go :: Value -> EvalMonad (Value, Value)
+    go (List [a, b]) = return (a, b)
+    go x = lift $ throwE $ IncorrectArgsTypes [x] "in `lookup` args"
 lookup p k = lift $ throwE $ IncorrectArgsTypes [p, k] "in `lookup` args"
 
 commands :: Value -> Value -> EvalMonad Value
@@ -80,7 +85,7 @@ commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
 
 descrToProg :: Value -> Value -> Value -> EvalMonad Value
 descrToProg (Prog (Program allVars _)) staticVars descr = do
-  bbs <- reverse <$> commandToBlocks descr
+  bbs <- commandToBlocks descr
   stVars <- toVars staticVars
   if not (stVars `isSubsequenceOf` allVars)
     then
@@ -89,32 +94,33 @@ descrToProg (Prog (Program allVars _)) staticVars descr = do
       return $ Prog (Program (allVars \\ stVars) bbs)
   where
     toVars :: Value -> EvalMonad [VarName]
-    toVars (Pair (Pair (StringLiteral name) _) vs) = (:) (VarName name) <$> toVars vs
-    toVars Unit = return []
+    toVars (List l) = mapM go l
+      where
+        go :: Value -> EvalMonad VarName
+        go (List [StringLiteral name, _]) = return $ VarName name
+        go x = lift $ throwE $ IncorrectArgsTypes [x] "in `toVars`"
     toVars x = lift $ throwE $ IncorrectArgsTypes [x] "in `toVars`"
 
     commandToBlocks :: Value -> EvalMonad [BasicBlock]
-    commandToBlocks Unit = return []
-    commandToBlocks (Pair bb bbs) = (:) <$> commandToBlock bb <*> commandToBlocks bbs
+    commandToBlocks (List l) = reverse <$> mapM commandToBlock l
     commandToBlocks x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToBlocks`"
 
     commandToBlock :: Value -> EvalMonad BasicBlock
-    commandToBlock (Pair jump (Pair lab@(Pair (StringLiteral _) _) Unit)) = BasicBlock (Label $ show lab) [] <$> commandToJump jump
-    commandToBlock (Pair assgn coms) = do
-      a <- commandToAssign assgn
-      b <- commandToBlock coms
-      return $ BasicBlock (label b) (assigns b ++ [a]) (jmp b)
+    commandToBlock (List l) = do
+      jump <- commandToJump $ head l
+      assn <- reverse <$> mapM commandToAssign (init $ tail l)
+      return $ BasicBlock (Label $ show $ last l) assn jump
     commandToBlock x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToBlock`"
 
     commandToJump :: Value -> EvalMonad Jump
-    commandToJump (Pair (StringLiteral "return") (Pair (Expr e) Unit)) = return $ Return e
-    commandToJump (Pair (StringLiteral "goto") (Pair (StringLiteral l) Unit)) = return $ Goto (Label l)
-    commandToJump (Pair (StringLiteral "if") (Pair (Expr c) (Pair (StringLiteral l1) (Pair (StringLiteral l2) Unit)))) =
+    commandToJump (List [StringLiteral "return", Expr e]) = return $ Return e
+    commandToJump (List [StringLiteral "goto", StringLiteral l]) = return $ Goto (Label l)
+    commandToJump (List [StringLiteral "if", Expr c, StringLiteral l1, StringLiteral l2]) =
       return $ If c (Label l1) (Label l2)
     commandToJump x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToJump`"
 
     commandToAssign :: Value -> EvalMonad Assignment
-    commandToAssign (Pair (StringLiteral "assign") (Pair (StringLiteral name) (Pair (Expr e) Unit))) =
+    commandToAssign (List [StringLiteral "assign", StringLiteral name, Expr e]) =
       return $ Assignment (VarName name) e
     commandToAssign x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToAssign`"
 descrToProg x y z = lift $ throwE $ IncorrectArgsTypes [x, y, z] "in `commandToProgram`"

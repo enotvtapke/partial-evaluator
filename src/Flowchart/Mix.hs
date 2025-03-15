@@ -12,24 +12,24 @@ mix =
     ["program", "vs0"]
     [ bb
         "init"
-        [ "pending" @= cons (cons (s "init") "vs0") unit,
-          "marked" @= unit,
-          "residual" @= unit
+        [ "pending" @= list [pair (s "init") "vs0"],
+          "marked" @= list [],
+          "residual" @= list []
         ]
         $ jump "blocksLoop",
       -- Basic Blocks loop
       bb
         "blocksLoop"
         []
-        $ jumpc ("pending" == unit) "end" "blocksLoopInit",
+        $ jumpc ("pending" == list []) "end" "blocksLoopInit",
       bb
         "blocksLoopInit"
         [ "pp" @= car (car "pending"),
-          "vs" @= cdr (car "pending"),
+          "vs" @= car (cdr (car "pending")),
           "pending" @= cdr "pending",
-          "marked" @= cons (cons "pp" "vs") "marked",
+          "marked" @= cons (pair "pp" "vs") "marked",
           "bb" @= commands "program" "pp",
-          "code" @= cons (cons "pp" "vs") unit -- should be reversed afterwards
+          "code" @= list [pair "pp" "vs"] -- will be reversed afterwards
         ]
         $ jump "commandsLoop",
       bb
@@ -40,7 +40,7 @@ mix =
       bb
         "commandsLoop"
         []
-        $ jumpc ("bb" == unit) "blocksLoopEpilogue" "commandsLoopInit",
+        $ jumpc ("bb" == list []) "blocksLoopEpilogue" "commandsLoopInit",
       bb
         "commandsLoopInit"
         [ "command" @= car "bb",
@@ -94,20 +94,20 @@ mix =
         $ jump "commandsLoop",
       bb
         "ifDynamic"
-        [ "code" @= cons (list [s "if", reduce "cond" "vs", cons "ppTrue" "vs", cons "ppFalse" "vs"]) "code"
+        [ "code" @= cons (list [s "if", reduce "cond" "vs", pair "ppTrue" "vs", pair "ppFalse" "vs"]) "code"
         ]
-        $ jumpc (member "marked" (cons "ppTrue" "vs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
+        $ jumpc (member "marked" (pair "ppTrue" "vs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
       bb
         "addPpTrueToPending"
-        ["pending" @= cons (cons "ppTrue" "vs") "pending"]
+        ["pending" @= cons (pair "ppTrue" "vs") "pending"]
         $ jump "addPpFalseToPendingCheck",
       bb
         "addPpFalseToPendingCheck"
         []
-        $ jumpc (member "marked" (cons "ppFalse" "vs")) "commandsLoop" "addPpFalseToPending",
+        $ jumpc (member "marked" (pair "ppFalse" "vs")) "commandsLoop" "addPpFalseToPending",
       bb
         "addPpFalseToPending"
-        ["pending" @= cons (cons "ppFalse" "vs") "pending"]
+        ["pending" @= cons (pair "ppFalse" "vs") "pending"]
         $ jump "commandsLoop",
       -- Return
       bb
@@ -118,5 +118,5 @@ mix =
         $ jump "commandsLoop",
       -- End labels
       bb "error" [] $ ret (s "error"),
-      bb "end" [] $ ret "residual"
+      bb "end" [] $ ret $ descrToProg "program" "vs0" "residual"
     ]
