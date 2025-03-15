@@ -29,6 +29,7 @@ data Error
   | IncorrectType String
   | IncorrectArgsTypes [Value] String
   | IndexOutOfBounds String
+  | InvalidStaticVars [VarName]
   deriving (Show, Eq)
 
 type EvalMonad = StateT EvalState (ExceptT Error IO)

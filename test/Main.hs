@@ -4,6 +4,7 @@ import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.Hspec (testSpecs)
 import qualified Flowchart.InterpreterSpec as F (interpreterSpec)
 import qualified Turing.InterpreterSpec as T (interpreterSpec) 
+import Flowchart.MixSpec (mixSpec)
 
 main :: IO ()
 main = do
@@ -12,7 +13,8 @@ main = do
       <$> mapM
         testSpecs
         [ F.interpreterSpec,
-          T.interpreterSpec
+          T.interpreterSpec,
+          mixSpec
         ]
   defaultMain
     ( testGroup

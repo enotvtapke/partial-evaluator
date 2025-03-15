@@ -21,6 +21,9 @@ module Flowchart.DSL
     suffixFrom,
     lookup,
     insert,
+    isStatic,
+    traceE,
+    descrToProg,
     member,
     reduce,
     eval,
@@ -91,12 +94,15 @@ cdr = Cdr
 list :: [Expr] -> Expr
 list = foldr cons unit
 
+-- | Map -> Value -> Value
 lookup :: Expr -> Expr -> Expr
 lookup = Lookup
 
+-- | Map -> Key -> Value -> Value
 insert :: Expr -> Expr -> Expr -> Expr
 insert = Insert
 
+-- | List -> Value -> Bool
 member :: Expr -> Expr -> Expr
 member = Member
 
@@ -112,14 +118,27 @@ unit = Constant Unit
 program :: [String] -> [BasicBlock] -> Program
 program vars = Program (VarName <$> vars)
 
+-- | Expr -> Map -> Expr
 reduce :: Expr -> Expr -> Expr
 reduce = Reduce
 
+-- | Expr -> Map -> Value
 eval :: Expr -> Expr -> Expr
 eval = Eval
 
+-- | Prog -> String -> List. Extract commands from basic block of the program with given label.
 commands :: Expr -> Expr -> Expr
 commands = Commands
+
+-- | Expr -> Map -> Bool
+isStatic :: Expr -> Expr -> Expr
+isStatic = IsStatic
+
+traceE :: Expr -> Expr -> Expr
+traceE = TraceExpr
+
+descrToProg :: Expr -> Expr -> Expr -> Expr
+descrToProg = DescrToProg
 
 expr :: Expr -> Expr
 expr = Constant . Expr

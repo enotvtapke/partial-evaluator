@@ -18,6 +18,7 @@ import Flowchart.Interpreter.EvalState
 import Prelude hiding (lookup)
 import GHC.IO (unsafePerformIO)
 import Control.Monad.Except (runExceptT)
+import Debug.Trace (trace)
 
 interpretValues :: Program -> [Value] -> EvalMonad Value
 interpretValues p values = interpret p (Constant <$> values)
@@ -76,6 +77,9 @@ reduceExpr (Lookup m k) = reduceBinExpr m k Lookup lookup
 reduceExpr (Commands p l) = reduceBinExpr p l Commands commands
 reduceExpr (Eval e vars) = reduceBinExpr e vars Eval eval
 reduceExpr (Reduce e vars) = reduceBinExpr e vars Reduce reduce
+reduceExpr (IsStatic e vars) = reduceBinExpr e vars IsStatic isStatic
+reduceExpr (TraceExpr traceE e) = trace (show traceE) reduceExpr e
+reduceExpr (DescrToProg prog stVars descr) = reduceTerExpr prog stVars descr DescrToProg descrToProg
 
 reduceUnExpr :: Expr -> (Expr -> Expr) -> (Value -> EvalMonad Value) -> EvalMonad Expr
 reduceUnExpr e c f =
@@ -103,6 +107,14 @@ reduceTerExpr e1 e2 e3 c f = do
     (x, y, z) -> return $ c x y z
 
 -- Very special builtin functions for mix
+
+isStatic :: Value -> Value -> EvalMonad Value
+isStatic (Expr e) vars = do
+  Expr er <- reduce (Expr e) vars
+  return $ case er of
+    Constant _ -> BoolLiteral True
+    _ -> BoolLiteral False
+isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
 
 eval :: Value -> Value -> EvalMonad Value
 eval (Expr e) vars = do

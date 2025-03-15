@@ -71,6 +71,7 @@ test-suite partial-evaluator-test
   main-is: Main.hs
   other-modules:
       Flowchart.InterpreterSpec
+      Flowchart.MixSpec
       Flowchart.TestPrograms
       TestUtils
       Turing.InterpreterSpec

@@ -9,12 +9,13 @@ module Flowchart.Interpreter.Builtin
     insert,
     lookup,
     commands,
+    descrToProg,
   )
 where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
-import Data.List (find)
+import Data.List (find, isSubsequenceOf, (\\))
 import Flowchart.AST
 import Flowchart.DSL (ev, listv, sv)
 import Flowchart.Interpreter.EvalState
@@ -75,4 +76,45 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
     jumpToCommand (Goto (Label l)) = listv [sv "goto", sv l]
     jumpToCommand (If e (Label l1) (Label l2)) = listv [sv "if", ev e, sv l1, sv l2]
     jumpToCommand (Return c) = listv [sv "return", ev c]
-commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in commands"
+commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
+
+descrToProg :: Value -> Value -> Value -> EvalMonad Value
+descrToProg (Prog (Program allVars _)) staticVars descr = do
+  bbs <- reverse <$> commandToBlocks descr
+  stVars <- toVars staticVars
+  if not (stVars `isSubsequenceOf` allVars)
+    then
+      lift $ throwE $ InvalidStaticVars stVars
+    else
+      return $ Prog (Program (allVars \\ stVars) bbs)
+  where
+    toVars :: Value -> EvalMonad [VarName]
+    toVars (Pair (Pair (StringLiteral name) _) vs) = (:) (VarName name) <$> toVars vs
+    toVars Unit = return []
+    toVars x = lift $ throwE $ IncorrectArgsTypes [x] "in `toVars`"
+
+    commandToBlocks :: Value -> EvalMonad [BasicBlock]
+    commandToBlocks Unit = return []
+    commandToBlocks (Pair bb bbs) = (:) <$> commandToBlock bb <*> commandToBlocks bbs
+    commandToBlocks x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToBlocks`"
+
+    commandToBlock :: Value -> EvalMonad BasicBlock
+    commandToBlock (Pair jump (Pair lab@(Pair (StringLiteral _) _) Unit)) = BasicBlock (Label $ show lab) [] <$> commandToJump jump
+    commandToBlock (Pair assgn coms) = do
+      a <- commandToAssign assgn
+      b <- commandToBlock coms
+      return $ BasicBlock (label b) (assigns b ++ [a]) (jmp b)
+    commandToBlock x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToBlock`"
+
+    commandToJump :: Value -> EvalMonad Jump
+    commandToJump (Pair (StringLiteral "return") (Pair (Expr e) Unit)) = return $ Return e
+    commandToJump (Pair (StringLiteral "goto") (Pair (StringLiteral l) Unit)) = return $ Goto (Label l)
+    commandToJump (Pair (StringLiteral "if") (Pair (Expr c) (Pair (StringLiteral l1) (Pair (StringLiteral l2) Unit)))) =
+      return $ If c (Label l1) (Label l2)
+    commandToJump x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToJump`"
+
+    commandToAssign :: Value -> EvalMonad Assignment
+    commandToAssign (Pair (StringLiteral "assign") (Pair (StringLiteral name) (Pair (Expr e) Unit))) =
+      return $ Assignment (VarName name) e
+    commandToAssign x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToAssign`"
+descrToProg x y z = lift $ throwE $ IncorrectArgsTypes [x, y, z] "in `commandToProgram`"
