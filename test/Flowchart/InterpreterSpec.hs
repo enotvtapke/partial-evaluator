@@ -15,6 +15,7 @@ interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_list
   spec_map
   spec_reduce
+  spec_commands
 
 spec_basic :: Spec
 spec_basic =
@@ -53,16 +54,38 @@ spec_list =
 
 spec_map :: Spec
 spec_map = describe "map" $ do
-    it "interpretes insert" $
-      (insertProgram, [s "b"]) `interShouldBe` list [cons (s "b") (int 2), cons (s "a") (int 11), cons (cons (s "a") (int 10)) unit]
-    it "interpretes lookup" $
-      (lookupProgram, [cons (s "c") (int 10)]) `interShouldBe` s "cv"
-    it "interpretes lookup when value not found" $
-      (lookupProgram, [cons (s "d") (int 10)]) `interShouldBe` unit
+  it "interpretes insert" $
+    (insertProgram, [s "b"]) `interShouldBe` list [cons (s "b") (int 2), cons (s "a") (int 11), cons (cons (s "a") (int 10)) unit]
+  it "interpretes lookup" $
+    (lookupProgram, [cons (s "c") (int 10)]) `interShouldBe` s "cv"
+  it "interpretes lookup when value not found" $
+    (lookupProgram, [cons (s "d") (int 10)]) `interShouldBe` unit
 
 spec_reduce :: Spec
 spec_reduce = describe "reduce" $ do
-    it "interpretes reduce" $
-      (reduceProgram, [list [cons (s "x") (int 2)]]) `interShouldBe` expr (int 5 + "y")
-    it "interpretes eval" $
-      (evalProgram, [list [cons (s "x") (int 2), cons (s "y") (int 4)]]) `interShouldBe` int 9
+  it "interpretes reduce" $
+    (reduceProgram, [list [cons (s "x") (int 2)]]) `interShouldBe` expr (int 5 + "y")
+  it "interpretes eval" $
+    (evalProgram, [list [cons (s "x") (int 2), cons (s "y") (int 4)]]) `interShouldBe` int 9
+
+spec_commands :: Spec
+spec_commands = describe "commands" $ do
+  it "interpretes commands loop 'loop'" $
+    (commandsProgram, [prog loop, s "loop"])
+      `interShouldBe` list
+        [ list [s "assign", s "x", expr ("x" + int 1)],
+          list [s "if", expr ("x" == int 10), s "ret", s "loop"]
+        ]
+  it "interpretes commands loop 'ret'" $
+    (commandsProgram, [prog loop, s "ret"])
+      `interShouldBe` list
+        [ list [s "return", expr "x"]
+        ]
+  it "interpretes commands loop 'ret'" $
+    (commandsProgram, [prog insertProgram, s "init"])
+      `interShouldBe` list
+        [ list [s "assign", s "m", expr $ list [cons (s "b") (int 3), cons (s "a") (int 11)]],
+          list [s "assign", s "m", expr $ insert "m" (cons (s "a") (int 10)) unit],
+          list [s "assign", s "m", expr $ insert "m" "k" (int 2)],
+          list [s "return", expr "m"]
+        ]

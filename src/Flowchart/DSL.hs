@@ -29,6 +29,8 @@ module Flowchart.DSL
     intv,
     sv,
     ev,
+    commands,
+    prog,
   )
 where
 
@@ -116,8 +118,14 @@ reduce = Reduce
 eval :: Expr -> Expr -> Expr
 eval = Eval
 
+commands :: Expr -> Expr -> Expr
+commands = Commands
+
 expr :: Expr -> Expr
 expr = Constant . Expr
+
+prog :: Program -> Expr
+prog = Constant . Prog
 
 -- DSL for values
 

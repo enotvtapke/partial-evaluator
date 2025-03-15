@@ -14,6 +14,7 @@ module Flowchart.TestPrograms
     memberProgram,
     reduceProgram,
     evalProgram,
+    commandsProgram,
   )
 where
 
@@ -144,3 +145,9 @@ evalProgram =
   program
     ["vars"]
     [bb "init" ["z" @= expr (car (cons ("x" + int 3) (s "s")) + "y")] $ ret $ eval "z" "vars"]
+
+commandsProgram :: Program
+commandsProgram =
+  program
+    ["prog", "l"]
+    [bb "init" [] $ ret $ commands "prog" "l"]
