@@ -35,11 +35,14 @@ module Flowchart.DSL
     commands,
     prog,
     pair,
+    toLabel,
+    compressLabels,
+    or,
   )
 where
 
 import Flowchart.AST
-import Prelude hiding (lookup)
+import Prelude hiding (or, lookup)
 
 lab :: String -> Label
 lab = Label
@@ -150,6 +153,15 @@ expr = Constant . Expr
 
 prog :: Program -> Expr
 prog = Constant . Prog
+
+toLabel :: Expr -> Expr
+toLabel = ToLabel
+
+compressLabels :: Expr -> Expr -> Expr
+compressLabels = CompressLabels
+
+or ::  Expr -> Expr -> Expr
+or = Or
 
 -- DSL for values
 

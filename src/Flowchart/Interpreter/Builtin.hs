@@ -10,6 +10,9 @@ module Flowchart.Interpreter.Builtin
     lookup,
     commands,
     descrToProg,
+    toLabel,
+    compressLabels,
+    or,
   )
 where
 
@@ -19,9 +22,11 @@ import Data.List (find, isSubsequenceOf, (\\))
 import Flowchart.AST
 import Flowchart.DSL (ev, listv, sv)
 import Flowchart.Interpreter.EvalState
-import Prelude hiding (lookup)
+import Prelude hiding (or, lookup)
 import qualified Data.List as L
 import Data.Maybe (fromMaybe)
+import qualified Data.HashMap.Lazy as M
+import Data.Bifunctor (second)
 
 plus :: Value -> Value -> EvalMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
@@ -68,6 +73,10 @@ lookup (List l) k = do
     go x = lift $ throwE $ IncorrectArgsTypes [x] "in `lookup` args"
 lookup p k = lift $ throwE $ IncorrectArgsTypes [p, k] "in `lookup` args"
 
+or :: Value -> Value -> EvalMonad Value
+or (BoolLiteral x) (BoolLiteral y) = return $ BoolLiteral (x || y)
+or x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `or` args"
+
 commands :: Value -> Value -> EvalMonad Value
 commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlock (Label l) body
   where
@@ -82,6 +91,12 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
     jumpToCommand (If e (Label l1) (Label l2)) = listv [sv "if", ev e, sv l1, sv l2]
     jumpToCommand (Return c) = listv [sv "return", ev c]
 commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
+
+toLabel :: Value -> EvalMonad Value
+toLabel v = return $ StringLiteral $ toLabelInternal v
+
+toLabelInternal :: Value -> String
+toLabelInternal = show
 
 descrToProg :: Value -> Value -> Value -> EvalMonad Value
 descrToProg (Prog (Program allVars _)) staticVars descr = do
@@ -109,7 +124,7 @@ descrToProg (Prog (Program allVars _)) staticVars descr = do
     commandToBlock (List l) = do
       jump <- commandToJump $ head l
       assn <- reverse <$> mapM commandToAssign (init $ tail l)
-      return $ BasicBlock (Label $ show $ last l) assn jump
+      return $ BasicBlock (Label $ toLabelInternal $ last l) assn jump
     commandToBlock x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToBlock`"
 
     commandToJump :: Value -> EvalMonad Jump
@@ -124,3 +139,31 @@ descrToProg (Prog (Program allVars _)) staticVars descr = do
       return $ Assignment (VarName name) e
     commandToAssign x = lift $ throwE $ IncorrectArgsTypes [x] "in `commandToAssign`"
 descrToProg x y z = lift $ throwE $ IncorrectArgsTypes [x, y, z] "in `commandToProgram`"
+
+compressLabels :: Value -> Value -> EvalMonad Value
+compressLabels (StringLiteral s) (Prog p) = return $ Prog $ evalState (compressLabelsProg p (Label s)) (0, M.empty)
+  where
+    compressLabelsProg :: Program -> Label ->  State (Int, M.HashMap Label Label) Program
+    compressLabelsProg (Program x bbs) initLabel = do
+      modify (second (M.insert initLabel (Label "init")))
+      Program x <$> mapM compressLabelsBb bbs
+
+    compressLabelsBb :: BasicBlock -> State (Int, M.HashMap Label Label) BasicBlock
+    compressLabelsBb (BasicBlock l assing j) = do
+      nl <- compressLabel l
+      nj <- case j of
+        Goto l1 -> Goto <$> compressLabel l1
+        If cond l1 l2 -> If cond <$> compressLabel l1 <*> compressLabel l2
+        x -> return x
+      return $ BasicBlock nl assing nj
+
+    compressLabel :: Label -> State (Int, M.HashMap Label Label) Label
+    compressLabel initialL = do
+      (counter, m) <- get
+      case M.lookup initialL m of
+        Just v -> return v
+        Nothing -> do
+          let compressedLab = Label $ "l" ++ show counter
+          put (counter + 1, M.insert initialL compressedLab m)
+          return compressedLab
+compressLabels x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `compressLabels`"

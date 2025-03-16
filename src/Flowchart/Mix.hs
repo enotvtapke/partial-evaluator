@@ -4,7 +4,7 @@ module Flowchart.Mix (mix) where
 
 import Flowchart.AST
 import Flowchart.DSL
-import Prelude hiding (lookup, (==))
+import Prelude hiding (or, lookup, (==))
 
 mix :: Program
 mix =
@@ -29,7 +29,7 @@ mix =
           "pending" @= tl "pending",
           "marked" @= cons (pair "pp" "vs") "marked",
           "bb" @= commands "program" "pp",
-          "code" @= list [pair "pp" "vs"] -- will be reversed afterwards
+          "code" @= list [pair "pp" "vs"]
         ]
         $ jump "commandsLoop",
       bb
@@ -79,7 +79,7 @@ mix =
           "ppTrue" @= hd (tl $ tl "command"),
           "ppFalse" @= hd (tl $ tl $ tl "command")
         ]
-        $ jumpc (isStatic "cond" "vs") "ifStatic" "ifDyn",
+        $ jumpc (isStatic "cond" "vs") "ifStatic" "ifDynamic",
       bb
         "ifStatic"
         []
@@ -94,9 +94,9 @@ mix =
         $ jump "commandsLoop",
       bb
         "ifDynamic"
-        [ "code" @= cons (list [s "if", reduce "cond" "vs", pair "ppTrue" "vs", pair "ppFalse" "vs"]) "code"
+        [ "code" @= cons (list [s "if", reduce "cond" "vs", toLabel $ pair "ppTrue" "vs", toLabel $ pair "ppFalse" "vs"]) "code"
         ]
-        $ jumpc (member "marked" (pair "ppTrue" "vs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
+        $ jumpc (member "marked" (pair "ppTrue" "vs") `or` member "pending" (pair "ppTrue" "vs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
       bb
         "addPpTrueToPending"
         ["pending" @= cons (pair "ppTrue" "vs") "pending"]
@@ -104,7 +104,7 @@ mix =
       bb
         "addPpFalseToPendingCheck"
         []
-        $ jumpc (member "marked" (pair "ppFalse" "vs")) "commandsLoop" "addPpFalseToPending",
+        $ jumpc (member "marked" (pair "ppFalse" "vs") `or` member "pending" (pair "ppFalse" "vs")) "commandsLoop" "addPpFalseToPending",
       bb
         "addPpFalseToPending"
         ["pending" @= cons (pair "ppFalse" "vs") "pending"]
@@ -118,5 +118,5 @@ mix =
         $ jump "commandsLoop",
       -- End labels
       bb "error" [] $ ret (s "error"),
-      bb "end" [] $ ret $ descrToProg "program" "vs0" "residual"
+      bb "end" [] $ ret $ compressLabels (toLabel $ pair (s "init") "vs0") $ descrToProg "program" "vs0" "residual"
     ]

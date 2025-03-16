@@ -63,6 +63,9 @@ data Expr
   | IsStatic Expr Expr
   | TraceExpr Expr Expr
   | DescrToProg Expr Expr Expr
+  | ToLabel Expr
+  | CompressLabels Expr Expr
+  | Or Expr Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

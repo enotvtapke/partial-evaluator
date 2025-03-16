@@ -8,11 +8,14 @@ import Test.Hspec
 import TestUtils
 import Prelude hiding ((+), (==))
 import Flowchart.TestPrograms
+import Turing.Interpreter (turingInterpreter)
+import Turing.TestPrograms (replaceFirstOne)
 
 mixSpec :: Spec
-mixSpec = describe "Flowchart Mix" $ do
+mixSpec = describe "Mix" $ do
   spec_search
   spec_descrToProg
+  spec_turing_machine
 
 spec_search :: Spec
 spec_search =
@@ -21,6 +24,11 @@ spec_search =
       (mix, [prog searchProgram, list [pair (s "name") (s "c"), pair (s "namelist") $ list [s "b", s "a", s "c"]]]) `interShouldBe` prog mixedSearchProgram
     it "interpretes search" $
       (searchProgram, [s "a", list [s "b", s "a", s "c"], list [s "bv", s "av", s "cv"]]) `interShouldBe` s "av"
+
+spec_turing_machine :: Spec
+spec_turing_machine =  describe "turing machine mix" $ do
+    it "mixes turing machine interpreter" $
+      (mix, [prog turingInterpreter, list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
 
 spec_descrToProg :: Spec
 spec_descrToProg =

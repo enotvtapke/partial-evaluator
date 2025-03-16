@@ -15,7 +15,7 @@ import Data.List (uncons)
 import Flowchart.AST
 import Flowchart.Interpreter.Builtin
 import Flowchart.Interpreter.EvalState
-import Prelude hiding (lookup)
+import Prelude hiding (or, lookup)
 import GHC.IO (unsafePerformIO)
 import Control.Monad.Except (runExceptT)
 import Debug.Trace (trace)
@@ -80,6 +80,9 @@ reduceExpr (Reduce e vars) = reduceBinExpr e vars Reduce reduce
 reduceExpr (IsStatic e vars) = reduceBinExpr e vars IsStatic isStatic
 reduceExpr (TraceExpr traceE e) = trace (show traceE) reduceExpr e
 reduceExpr (DescrToProg prog stVars descr) = reduceTerExpr prog stVars descr DescrToProg descrToProg
+reduceExpr (ToLabel l) = reduceUnExpr l ToLabel toLabel
+reduceExpr (CompressLabels prog initL) = reduceBinExpr prog initL CompressLabels compressLabels
+reduceExpr (Or a b) = reduceBinExpr a b Or or
 
 reduceUnExpr :: Expr -> (Expr -> Expr) -> (Value -> EvalMonad Value) -> EvalMonad Expr
 reduceUnExpr e c f =
@@ -135,7 +138,7 @@ reduce (Expr e) vars = do
         runWithVars m vs = unsafePerformIO $ runExceptT $ evalStateT m (EvalState vs M.empty)
 
     varsToMap :: Value -> EvalMonad (M.HashMap VarName Value)
-    varsToMap (List l) = trace ("idd: " ++ show l) $ M.fromList <$> mapM go l
+    varsToMap (List l) = M.fromList <$> mapM go l
       where
         go :: Value -> EvalMonad (VarName, Value)
         go (List [StringLiteral k, v]) = return (VarName k, v)

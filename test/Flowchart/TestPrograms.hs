@@ -20,6 +20,7 @@ module Flowchart.TestPrograms
     searchContDescr,
     mixedSearchProgram,
     searchProgram,
+    mixedTuringProgram,
   )
 where
 
@@ -192,7 +193,7 @@ mixedSearchProgram =
   program
     ["valuelist"]
     [ bb
-        "[\"init\",[[\"name\",\"c\"],[\"namelist\",[\"b\",\"a\",\"c\"]]]]"
+        "init"
         [ "valuelist" @= tl "valuelist",
           "valuelist" @= tl "valuelist"
         ]
@@ -213,4 +214,30 @@ searchProgram =
         ]
         $ jump "search",
       bb "found" [] $ ret (hd "valuelist")
+    ]
+
+mixedTuringProgram :: Program
+mixedTuringProgram =
+  Program
+    [VarName "right"]
+    [ BasicBlock
+        { label = Label "init",
+          assigns = [],
+          jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")
+        },
+      BasicBlock
+        { label = Label "l1",
+          assigns =
+            [ Assignment (VarName "left") (Cons (Hd (Var (VarName "right"))) (Constant $ List [])), -- TODO `Constant $ List []` is incorrect because there is no "generalization"
+              Assignment (VarName "right") (Tl (Var (VarName "right")))
+            ],
+          jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")
+        },
+      BasicBlock
+        { label = Label "l0",
+          assigns =
+            [ Assignment (VarName "right") (Cons (Constant $ IntLiteral 1) (Tl (Var (VarName "right"))))
+            ],
+          jmp = Return (Var (VarName "right"))
+        }
     ]
