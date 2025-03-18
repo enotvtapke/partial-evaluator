@@ -16,6 +16,7 @@ interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_map
   spec_reduce
   spec_commands
+  spec_dynamicLabels
 
 spec_basic :: Spec
 spec_basic =
@@ -89,3 +90,8 @@ spec_commands = describe "commands" $ do
           list [s "assign", s "m", expr $ insert "m" "k" (int 2)],
           list [s "return", expr "m"]
         ]
+
+spec_dynamicLabels  :: Spec
+spec_dynamicLabels = describe "dynamicLabels" $ do
+  it "interpretes dynamicLabels" $
+    (dynamicLabelsProgram, [prog caseProgram]) `interShouldBe` list[s "init", s "ret", s "cont1", s "cont2", s "cont3", s "cont4", s "error"]

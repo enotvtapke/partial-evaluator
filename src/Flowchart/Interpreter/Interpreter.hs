@@ -78,9 +78,12 @@ reduceExpr (Commands p l) = reduceBinExpr p l Commands commands
 reduceExpr (Eval e vars) = reduceBinExpr e vars Eval eval
 reduceExpr (Reduce e vars) = reduceBinExpr e vars Reduce reduce
 reduceExpr (IsStatic e vars) = reduceBinExpr e vars IsStatic isStatic
-reduceExpr (TraceExpr traceE e) = trace (show traceE) reduceExpr e
+reduceExpr (TraceExpr traced e) = do
+  tracedE <- reduceExpr traced
+  trace (show tracedE) reduceExpr e
 reduceExpr (DescrToProg prog stVars descr) = reduceTerExpr prog stVars descr DescrToProg descrToProg
 reduceExpr (ToLabel l) = reduceUnExpr l ToLabel toLabel
+reduceExpr (DynamicLabels p) = reduceUnExpr p ToLabel dynamicLabels
 reduceExpr (CompressLabels prog initL) = reduceBinExpr prog initL CompressLabels compressLabels
 reduceExpr (Or a b) = reduceBinExpr a b Or or
 

@@ -66,6 +66,7 @@ data Expr
   | ToLabel Expr
   | CompressLabels Expr Expr
   | Or Expr Expr
+  | DynamicLabels Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

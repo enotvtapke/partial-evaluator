@@ -21,6 +21,7 @@ module Flowchart.TestPrograms
     mixedSearchProgram,
     searchProgram,
     mixedTuringProgram,
+    dynamicLabelsProgram,
   )
 where
 
@@ -241,3 +242,9 @@ mixedTuringProgram =
           jmp = Return (Var (VarName "right"))
         }
     ]
+
+dynamicLabelsProgram :: Program
+dynamicLabelsProgram =
+  program
+    ["prog"]
+    [bb "init" [] $ ret $ dynamicLabels "prog"]

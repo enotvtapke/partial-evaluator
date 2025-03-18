@@ -38,6 +38,7 @@ module Flowchart.DSL
     toLabel,
     compressLabels,
     or,
+    dynamicLabels,
   )
 where
 
@@ -128,6 +129,9 @@ program vars = Program (VarName <$> vars)
 -- | Expr -> Map -> Expr
 reduce :: Expr -> Expr -> Expr
 reduce = Reduce
+
+dynamicLabels :: Expr -> Expr
+dynamicLabels = DynamicLabels
 
 -- | Expr -> Map -> Value
 eval :: Expr -> Expr -> Expr
