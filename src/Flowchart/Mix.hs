@@ -9,7 +9,7 @@ import Prelude hiding (or, lookup, (==))
 mix :: Program
 mix =
   program
-    ["program", "vs0"]
+    ["program", "staticVars", "vs0"]
     [ bb
         "init"
         [ "pending" @= list [pair (s "init") "vs0"],
@@ -56,7 +56,7 @@ mix =
         [ "varName" @= hd (tl "command"),
           "varExpr" @= hd (tl $ tl "command")
         ]
-        $ jumpc (isStatic "varExpr" "vs") "assignStatic" "assignDyn",
+        $ jumpc (isStatic "varExpr" "staticVars") "assignStatic" "assignDyn",
       bb
         "assignDyn"
         ["code" @= cons (list [s "assign", "varName", reduce "varExpr" "vs"]) "code"]
@@ -79,7 +79,7 @@ mix =
           "ppTrue" @= hd (tl $ tl "command"),
           "ppFalse" @= hd (tl $ tl $ tl "command")
         ]
-        $ jumpc (isStatic "cond" "vs") "ifStatic" "ifDynamic",
+        $ jumpc (isStatic "cond" "staticVars") "ifStatic" "ifDynamic",
       bb
         "ifStatic"
         []

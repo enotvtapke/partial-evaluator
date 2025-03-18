@@ -164,7 +164,7 @@ descrProgram =
   program
     ["namelist", "valuelist"]
     [ bb
-        "[\"cont\",[]]"
+        "List [StringLiteral \"cont\",List []]"
         [ "namelist" @= tl "namelist",
           "valuelist" @= tl "valuelist"
         ]

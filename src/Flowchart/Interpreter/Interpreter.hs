@@ -114,14 +114,6 @@ reduceTerExpr e1 e2 e3 c f = do
 
 -- Very special builtin functions for mix
 
-isStatic :: Value -> Value -> EvalMonad Value
-isStatic (Expr e) vars = do
-  Expr er <- reduce (Expr e) vars
-  return $ case er of
-    Constant _ -> BoolLiteral True
-    _ -> BoolLiteral False
-isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
-
 eval :: Value -> Value -> EvalMonad Value
 eval (Expr e) vars = do
   Expr ee <- reduce (Expr e) vars
@@ -147,5 +139,4 @@ reduce (Expr e) vars = do
         go (List [StringLiteral k, v]) = return (VarName k, v)
         go x = lift $ throwE $ IncorrectArgsTypes [x] "in `varsToMap1` args"
     varsToMap p = lift $ throwE $ IncorrectArgsTypes [p] "in `varsToMap` args"
-    
 reduce x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `reduce` args"

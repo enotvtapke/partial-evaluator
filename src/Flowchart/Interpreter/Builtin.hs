@@ -15,6 +15,7 @@ module Flowchart.Interpreter.Builtin
     compressLabels,
     or,
     dynamicLabels,
+    isStatic,
   )
 where
 
@@ -29,6 +30,7 @@ import qualified Data.List as L
 import Data.Maybe (fromMaybe)
 import qualified Data.HashMap.Lazy as M
 import Data.Bifunctor (second)
+import Flowchart.DivisionCalculator (exprIsStatic)
 
 plus :: Value -> Value -> EvalMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
@@ -182,3 +184,15 @@ compressLabels (StringLiteral s) (Prog p) = return $ Prog $ evalState (compressL
           put (counter + 1, M.insert initialL compressedLab m)
           return compressedLab
 compressLabels x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `compressLabels`"
+
+isStatic :: Value -> Value -> EvalMonad Value
+isStatic (Expr e) staticVarNames = BoolLiteral . exprIsStatic e <$> valueToVarNames staticVarNames
+  where
+    valueToVarNames :: Value ->  EvalMonad [VarName]
+    valueToVarNames (List names) = mapM valueToVarName names
+    valueToVarNames x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarNames` args"
+
+    valueToVarName :: Value -> EvalMonad VarName
+    valueToVarName (StringLiteral n) = return $ VarName n
+    valueToVarName x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarName` args"
+isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"

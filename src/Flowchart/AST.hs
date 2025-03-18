@@ -14,7 +14,6 @@ module Flowchart.AST
   )
 where
 
-import Text.Printf (printf)
 import Data.Hashable
 import Data.String (IsString(..))
 data Program = Program [VarName] [BasicBlock] deriving (Eq, Show)
@@ -27,19 +26,9 @@ data Value
   | StringLiteral String
   | List [Value]
   | Unit
-  deriving (Eq)
+  deriving (Eq, Show)
 
-instance Show Value where
-  show :: Value -> String
-  show (IntLiteral i) = show i
-  show (BoolLiteral b) = show b
-  show (StringLiteral s) = show s
-  show (List l) = printf "%s" (show l)
-  show Unit = "()"
-  show (Expr e) = printf "`%s`" (show e)
-  show (Prog p) = printf "p`%s`" (show p)
-
-newtype VarName = VarName String deriving (Eq, Hashable, Show)
+newtype VarName = VarName String deriving (Eq, Hashable, Show, Ord)
 
 data BasicBlock = BasicBlock { label :: Label, assigns :: [Assignment], jmp :: Jump } deriving (Eq, Show)
 

@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Flowchart.AST
+      Flowchart.DivisionCalculator
       Flowchart.DSL
       Flowchart.Interpreter.Builtin
       Flowchart.Interpreter.EvalState
