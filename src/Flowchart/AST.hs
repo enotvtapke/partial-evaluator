@@ -55,7 +55,7 @@ data Expr
   | ToLabel Expr
   | CompressLabels Expr Expr
   | Or Expr Expr
-  | DynamicLabels Expr
+  | DynamicLabels Expr Expr
   deriving (Eq, Show)
 
 instance IsString Expr where
@@ -64,4 +64,4 @@ instance IsString Expr where
 
 data Jump = Goto Label | If Expr Label Label | Return Expr deriving (Eq, Show)
 
-newtype Label = Label String deriving (Eq, Hashable, Show)
+newtype Label = Label String deriving (Eq, Hashable, Show, Ord)

@@ -130,7 +130,7 @@ program vars = Program (VarName <$> vars)
 reduce :: Expr -> Expr -> Expr
 reduce = Reduce
 
-dynamicLabels :: Expr -> Expr
+dynamicLabels :: Expr -> Expr -> Expr
 dynamicLabels = DynamicLabels
 
 -- | Expr -> Map -> Value

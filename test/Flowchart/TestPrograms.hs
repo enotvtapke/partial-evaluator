@@ -246,5 +246,5 @@ mixedTuringProgram =
 dynamicLabelsProgram :: Program
 dynamicLabelsProgram =
   program
-    ["prog"]
-    [bb "init" [] $ ret $ dynamicLabels "prog"]
+    ["prog", "staticVars"]
+    [bb "init" [] $ ret $ dynamicLabels "prog" "staticVars"]

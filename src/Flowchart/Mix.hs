@@ -28,10 +28,10 @@ mix =
           "vs" @= hd (tl (hd "pending")),
           "pending" @= tl "pending",
           "marked" @= cons (pair "pp" "vs") "marked",
-          "bb" @= commands "program" "pp",
+          "pps" @= dynamicLabels "program" "staticVars",
           "code" @= list [pair "pp" "vs"]
         ]
-        $ jump "commandsLoop",
+        $ jump "searchBb",
       bb
         "blocksLoopEpilogue"
         ["residual" @= cons "code" "residual"]
@@ -118,5 +118,15 @@ mix =
         $ jump "commandsLoop",
       -- End labels
       bb "error" [] $ ret (s "error"),
-      bb "end" [] $ ret $ compressLabels (toLabel $ pair (s "init") "vs0") $ descrToProg "program" "vs0" "residual"
+      bb "end" [] $ ret $ compressLabels (toLabel $ pair (s "init") "vs0") $ descrToProg "program" "vs0" "residual",
+      -- Lookup
+      bb "searchBb" [] $ jumpc ("pp" == hd "pps") "found" "cont",
+      bb
+        "cont"
+        [ "pps" @= tl "pps"
+        ]
+        $ jumpc ("pps" == list []) "error" "searchBb",
+      bb "found" [
+        "bb" @= commands "program" (hd "pps")
+      ] $ jump "commandsLoop"
     ]

@@ -21,7 +21,7 @@ where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
-import Data.List (find, isSubsequenceOf, (\\), nub)
+import Data.List (find, isSubsequenceOf, (\\), group, sort)
 import Flowchart.AST
 import Flowchart.DSL (ev, listv, sv)
 import Flowchart.Interpreter.EvalState
@@ -96,18 +96,19 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
     jumpToCommand (Return c) = listv [sv "return", ev c]
 commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
 
--- TODO nub is slow
-dynamicLabels :: Value -> EvalMonad Value
-dynamicLabels (Prog (Program _ bbs )) = return $ List $ (\(Label l) -> StringLiteral l) <$> nub (Label "init" : getLabels bbs)
+dynamicLabels :: Value -> Value -> EvalMonad Value
+dynamicLabels (Prog (Program _ bbs )) staticVars = do
+  v <- valueToVarNames staticVars
+  return $ List $ (\(Label l) -> StringLiteral l) <$> map head ((group . sort) (Label "init" : getLabels v bbs))
   where
-    getLabels :: [BasicBlock] -> [Label]
-    getLabels =
+    getLabels :: [VarName] -> [BasicBlock] -> [Label]
+    getLabels staticVarNames =
       (=<<)
         ( \case
-            (BasicBlock _ _ (If _ l1 l2)) -> [l1, l2] -- Here should be filtration for ifs with dynamic condition
+            (BasicBlock _ _ (If c l1 l2)) -> if exprIsStatic c staticVarNames then [] else [l1, l2] -- Here should be filtration for ifs with dynamic condition
             _ -> []
         )
-dynamicLabels x = lift $ throwE $ IncorrectArgsTypes [x] "in `labels`"
+dynamicLabels x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `labels`"
 
 toLabel :: Value -> EvalMonad Value
 toLabel v = return $ StringLiteral $ toLabelInternal v
@@ -187,12 +188,12 @@ compressLabels x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `compressLabe
 
 isStatic :: Value -> Value -> EvalMonad Value
 isStatic (Expr e) staticVarNames = BoolLiteral . exprIsStatic e <$> valueToVarNames staticVarNames
-  where
-    valueToVarNames :: Value ->  EvalMonad [VarName]
-    valueToVarNames (List names) = mapM valueToVarName names
-    valueToVarNames x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarNames` args"
+isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
 
+valueToVarNames :: Value ->  EvalMonad [VarName]
+valueToVarNames (List names) = mapM valueToVarName names
+  where
     valueToVarName :: Value -> EvalMonad VarName
     valueToVarName (StringLiteral n) = return $ VarName n
     valueToVarName x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarName` args"
-isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
+valueToVarNames x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarNames` args"

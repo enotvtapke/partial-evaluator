@@ -7,6 +7,7 @@ import Flowchart.TestPrograms
 import Test.Hspec
 import TestUtils
 import Prelude hiding ((+), (==))
+import Flowchart.DivisionCalculator (programStaticVars)
 
 interpreterSpec :: Spec
 interpreterSpec = describe "Flowchart Interpreter" $ do
@@ -94,4 +95,4 @@ spec_commands = describe "commands" $ do
 spec_dynamicLabels  :: Spec
 spec_dynamicLabels = describe "dynamicLabels" $ do
   it "interpretes dynamicLabels" $
-    (dynamicLabelsProgram, [prog caseProgram]) `interShouldBe` list[s "init", s "ret", s "cont1", s "cont2", s "cont3", s "cont4", s "error"]
+    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list[s "init"]

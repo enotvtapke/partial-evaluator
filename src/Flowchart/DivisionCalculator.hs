@@ -42,6 +42,6 @@ exprVars (IsStatic e1 e2) = exprVars e1 ++ exprVars e2
 exprVars (TraceExpr _ e2) = exprVars e2
 exprVars (DescrToProg e1 e2 e3) = exprVars e1 ++ exprVars e2 ++ exprVars e3
 exprVars (ToLabel e1) = exprVars e1
-exprVars (DynamicLabels e1) = exprVars e1
+exprVars (DynamicLabels e1 e2) = exprVars e1 ++ exprVars e2
 exprVars (CompressLabels e1 e2) = exprVars e1 ++ exprVars e2
 exprVars (Or e1 e2) = exprVars e1 ++ exprVars e2

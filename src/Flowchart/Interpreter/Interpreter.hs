@@ -83,7 +83,7 @@ reduceExpr (TraceExpr traced e) = do
   trace (show tracedE) reduceExpr e
 reduceExpr (DescrToProg prog stVars descr) = reduceTerExpr prog stVars descr DescrToProg descrToProg
 reduceExpr (ToLabel l) = reduceUnExpr l ToLabel toLabel
-reduceExpr (DynamicLabels p) = reduceUnExpr p ToLabel dynamicLabels
+reduceExpr (DynamicLabels p staticVarNames) = reduceBinExpr p staticVarNames DynamicLabels dynamicLabels
 reduceExpr (CompressLabels prog initL) = reduceBinExpr prog initL CompressLabels compressLabels
 reduceExpr (Or a b) = reduceBinExpr a b Or or
 
