@@ -38,11 +38,12 @@ module Flowchart.DSL
     toLabel,
     compressLabels,
     or,
+    dynamicLabels,
   )
 where
 
 import Flowchart.AST
-import Prelude hiding (or, lookup)
+import Prelude hiding ((==), or, lookup)
 
 lab :: String -> Label
 lab = Label
@@ -128,6 +129,9 @@ program vars = Program (VarName <$> vars)
 -- | Expr -> Map -> Expr
 reduce :: Expr -> Expr -> Expr
 reduce = Reduce
+
+dynamicLabels :: Expr -> Expr
+dynamicLabels = DynamicLabels
 
 -- | Expr -> Map -> Value
 eval :: Expr -> Expr -> Expr

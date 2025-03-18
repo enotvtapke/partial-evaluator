@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Flowchart.Interpreter.Builtin
   ( plus,
     eq,
@@ -13,12 +14,13 @@ module Flowchart.Interpreter.Builtin
     toLabel,
     compressLabels,
     or,
+    dynamicLabels,
   )
 where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
-import Data.List (find, isSubsequenceOf, (\\))
+import Data.List (find, isSubsequenceOf, (\\), nub)
 import Flowchart.AST
 import Flowchart.DSL (ev, listv, sv)
 import Flowchart.Interpreter.EvalState
@@ -91,6 +93,19 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
     jumpToCommand (If e (Label l1) (Label l2)) = listv [sv "if", ev e, sv l1, sv l2]
     jumpToCommand (Return c) = listv [sv "return", ev c]
 commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
+
+-- TODO nub is slow
+dynamicLabels :: Value -> EvalMonad Value
+dynamicLabels (Prog (Program _ bbs )) = return $ List $ (\(Label l) -> StringLiteral l) <$> nub (Label "init" : getLabels bbs)
+  where
+    getLabels :: [BasicBlock] -> [Label]
+    getLabels =
+      (=<<)
+        ( \case
+            (BasicBlock _ _ (If _ l1 l2)) -> [l1, l2] -- Here should be filtration for ifs with dynamic condition
+            _ -> []
+        )
+dynamicLabels x = lift $ throwE $ IncorrectArgsTypes [x] "in `labels`"
 
 toLabel :: Value -> EvalMonad Value
 toLabel v = return $ StringLiteral $ toLabelInternal v

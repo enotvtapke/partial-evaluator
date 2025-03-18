@@ -27,17 +27,17 @@ data Value
   | StringLiteral String
   | List [Value]
   | Unit
-  deriving (Eq)
+  deriving (Eq, Show)
 
-instance Show Value where
-  show :: Value -> String
-  show (IntLiteral i) = show i
-  show (BoolLiteral b) = show b
-  show (StringLiteral s) = show s
-  show (List l) = printf "%s" (show l)
-  show Unit = "()"
-  show (Expr e) = printf "`%s`" (show e)
-  show (Prog p) = printf "p`%s`" (show p)
+-- instance Show Value where
+--   show :: Value -> String
+--   show (IntLiteral i) = show i
+--   show (BoolLiteral b) = show b
+--   show (StringLiteral s) = show s
+--   show (List l) = printf "%s" (show l)
+--   show Unit = "()"
+--   show (Expr e) = printf "`%s`" (show e)
+--   show (Prog p) = printf "p`%s`" (show p)
 
 newtype VarName = VarName String deriving (Eq, Hashable, Show)
 
@@ -66,6 +66,7 @@ data Expr
   | ToLabel Expr
   | CompressLabels Expr Expr
   | Or Expr Expr
+  | DynamicLabels Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

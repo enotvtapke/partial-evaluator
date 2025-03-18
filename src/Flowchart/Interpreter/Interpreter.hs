@@ -11,7 +11,7 @@ where
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
 import qualified Data.HashMap.Lazy as M
-import Data.List (uncons)
+import Data.List (uncons, sort, group, groupBy, nub)
 import Flowchart.AST
 import Flowchart.Interpreter.Builtin
 import Flowchart.Interpreter.EvalState
@@ -24,9 +24,10 @@ interpretValues :: Program -> [Value] -> EvalMonad Value
 interpretValues p values = interpret p (Constant <$> values)
 
 interpret :: Program -> [Expr] -> EvalMonad Value
-interpret (Program names body) exprs = do
+interpret p@(Program names body) exprs = do
   values <- mapM evalExpr exprs
   mapM_ (uncurry putVar) (zip names values)
+  putVar (VarName "_staticVars") (toValue $ staticVars p (M.fromList $ zip names values))
   putLabels body
   maybe (lift $ throwE EmptyProgram) (evalBlock . fst) (uncons body)
 
@@ -34,7 +35,10 @@ putLabels :: [BasicBlock] -> EvalMonad ()
 putLabels = mapM_ (\bb@(BasicBlock l _ _) -> putLabel l bb)
 
 evalBlock :: BasicBlock -> EvalMonad Value
-evalBlock (BasicBlock _ assgn jmp) = do
+evalBlock (BasicBlock l assgn jmp) = do
+  v <- gets vars
+  --  show (M.filterWithKey (\(VarName n) _ -> n == "residual") v)
+  -- trace (show l) pure ()
   mapM_ evalAssignment assgn
   evalJump jmp
 
@@ -78,11 +82,34 @@ reduceExpr (Commands p l) = reduceBinExpr p l Commands commands
 reduceExpr (Eval e vars) = reduceBinExpr e vars Eval eval
 reduceExpr (Reduce e vars) = reduceBinExpr e vars Reduce reduce
 reduceExpr (IsStatic e vars) = reduceBinExpr e vars IsStatic isStatic
-reduceExpr (TraceExpr traceE e) = trace (show traceE) reduceExpr e
+reduceExpr (TraceExpr traced e) = do
+  tracedE <- reduceExpr traced
+  List marked <- getVar $ VarName "marked"
+  let trans = M.fromListWith (++) $ map (\(List [StringLiteral pp, (List vars)]) -> (pp, [M.fromListWith (++) $ map (\(List [StringLiteral vName, vVal]) -> (vName, [show vVal])) vars])) marked
+  let pps = (map head . group . sort) $ map (\(List [StringLiteral pp, List vars]) -> pp) marked
+  let varNames = (map head . group . sort) $ join $ map (\(List [StringLiteral pp, (List vars)]) -> map (\(List [StringLiteral vName, vVal]) -> vName) vars) marked
+  let varVals = (map head . group . sort) $ map (\(List [StringLiteral pp, (List vars)]) -> (pp, map (\(List [StringLiteral vName, vVal]) -> (vName, show vVal)) vars)) marked
+  let x = groupBy (\a b -> fst a == fst b) $ (map head . group . sort) $ join $ map (\(List [StringLiteral pp, (List vars)]) -> map (\(List [StringLiteral vName, vVal]) -> (vName, show vVal)) vars) marked
+  let y = map (\l -> (fst $ head l, length l)) x
+  -- let counts = M.mapKeys (\x -> fst $ head x) $ countElems x
+  -- trace ("pps: " ++ show pps ++ "\n") pure ()
+  -- trace ("varNames: " ++ show varNames ++ "\n") pure ()
+  -- trace ("truncVarVals: " ++ show (trans M.!? "a") ++ "\n") pure ()
+  -- trace ("truncVarVals: " ++ show (M.map (map (M.map (map length))) trans) ++ "\n") pure ()
+  -- trace ("count: " ++ show y ++ "\n") pure ()
+  -- trace ("marked:" ++ show (length $ nub marked)) pure ()
+  -- trace ("marked:" ++ show (length marked)) pure ()
+  -- trace ("marked1:" ++ show (length varVals)) pure ()
+  -- trace ("marked1:" ++ show (length $ nub varVals)) pure ()
+  trace (show tracedE) reduceExpr e
 reduceExpr (DescrToProg prog stVars descr) = reduceTerExpr prog stVars descr DescrToProg descrToProg
 reduceExpr (ToLabel l) = reduceUnExpr l ToLabel toLabel
+reduceExpr (DynamicLabels p) = reduceUnExpr p ToLabel dynamicLabels
 reduceExpr (CompressLabels prog initL) = reduceBinExpr prog initL CompressLabels compressLabels
 reduceExpr (Or a b) = reduceBinExpr a b Or or
+
+-- countElems :: (Hashable a) => [a] -> M.HashMap a Int
+-- countElems = M.fromListWith (+) . flip zip (repeat 1)
 
 reduceUnExpr :: Expr -> (Expr -> Expr) -> (Value -> EvalMonad Value) -> EvalMonad Expr
 reduceUnExpr e c f =
@@ -112,12 +139,38 @@ reduceTerExpr e1 e2 e3 c f = do
 -- Very special builtin functions for mix
 
 isStatic :: Value -> Value -> EvalMonad Value
-isStatic (Expr e) vars = do
-  Expr er <- reduce (Expr e) vars
+isStatic (Expr e) variables = do
+  vs <- flip (M.!) (VarName "_staticVars") <$> gets vars 
+  Expr er <- reduce (Expr e) vs
   return $ case er of
     Constant _ -> BoolLiteral True
     _ -> BoolLiteral False
 isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
+
+toValue :: M.HashMap VarName Value -> Value
+toValue m = List $ map (\(VarName name, val) -> List [StringLiteral name, val]) (M.toList m)
+
+staticVars :: Program -> M.HashMap VarName Value -> M.HashMap VarName Value
+staticVars (Program _ bbs) vs0 = case runEvalMonad $ evalAssignsWithVars bbs vs0 of
+  Right r -> r
+  Left l -> error ("Error in `staticVars`: " ++ show l)
+  where
+    evalAssignsWithVars :: [BasicBlock] -> M.HashMap VarName Value -> EvalMonad (M.HashMap VarName Value)
+    evalAssignsWithVars bbs variables = do
+      modify (\(EvalState _ l) -> EvalState variables l)
+      mapM_ evalAssigns bbs
+      variables' <- gets vars
+      if variables' == variables then return variables' else evalAssignsWithVars bbs variables'
+      where
+        evalAssigns :: BasicBlock -> EvalMonad ()
+        evalAssigns (BasicBlock _ assigns _) =
+          mapM_ (\(Assignment vName vExpr) -> do
+              vExprReduced <- reduceExpr vExpr
+              case vExprReduced of
+                Constant v -> putVar vName v
+                _ -> pure ()
+            ) assigns
+
 
 eval :: Value -> Value -> EvalMonad Value
 eval (Expr e) vars = do
