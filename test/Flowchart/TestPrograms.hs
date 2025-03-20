@@ -223,13 +223,13 @@ mixedTuringProgram =
     [VarName "right"]
     [ BasicBlock
         { label = Label "init",
-          assigns = [],
+          assigns = [Assignment (VarName "left") (Constant (List []))],
           jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")
         },
       BasicBlock
         { label = Label "l1",
           assigns =
-            [ Assignment (VarName "left") (Cons (Hd (Var (VarName "right"))) (Constant $ List [])), -- TODO `Constant $ List []` is incorrect because there is no "generalization"
+            [ Assignment (VarName "left") (Cons (Hd (Var (VarName "right"))) (Var (VarName "left"))), -- TODO `Constant $ List []` is incorrect because there is no "generalization"
               Assignment (VarName "right") (Tl (Var (VarName "right")))
             ],
           jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")

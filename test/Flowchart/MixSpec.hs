@@ -53,12 +53,12 @@ spec_descrToProg =
 spec_secondProjection :: Spec
 spec_secondProjection =
   describe "secondProjection" $ do
-    it "second proj" $
-      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` int 2
     it "run second proj" $
-      (runMixed mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` int 2
-    -- it "third proj" $
-    --   (mix, [prog mix, list [pair (s "program") (prog mix)]]) `interShouldBe` int 2
+      (runMixed mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
+    xit "second proj" $
+      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` int 2
+    xit "third proj" $
+      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` int 2
     -- it "run third proj" $
     --   (runMixed mix [prog mix, list [pair (s "program") (prog mix)]], [list [pair (s "program") (prog turingInterpreter)]]) `interShouldBe` int 2
 

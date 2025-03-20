@@ -56,7 +56,7 @@ mix =
         [ "varName" @= hd (tl "command"),
           "varExpr" @= hd (tl $ tl "command")
         ]
-        $ jumpc (isStatic "varExpr" "staticVars") "assignStatic" "assignDyn",
+        $ jumpc (member "staticVars" "varName") "assignStatic" "assignDyn",
       bb
         "assignDyn"
         ["code" @= cons (list [s "assign", "varName", reduce "varExpr" "vs"]) "code"]
