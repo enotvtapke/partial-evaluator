@@ -1,27 +1,39 @@
 module Flowchart.DivisionCalculator (programStaticVars', programStaticVars, exprIsStatic) where
 
 import Control.Monad (join)
-import Data.List (isSubsequenceOf, sort, group, nub)
+import Data.List (isSubsequenceOf, sort, group, intersect, (\\))
 import Flowchart.AST
-
-programStaticVars :: Program -> [String] -> Expr
-programStaticVars p names = Constant $ varNamesToList $ programStaticVars' p (map VarName names)
 
 varNamesToList :: [VarName] -> Value
 varNamesToList variables = List (map (\(VarName name) -> StringLiteral name) variables)
 
 programStaticVars' :: Program -> [VarName] -> [VarName]
-programStaticVars' p@(Program _ blocks) staticVars =
-  nub $ let staticVars' = (map head . group . sort) $ staticVars ++ join (map (`blockStaticVars` staticVars) blocks)
-   in if staticVars == staticVars' then staticVars else programStaticVars' p staticVars'
+programStaticVars' p@(Program initVars _) staticInitVars = programVars p \\ programDynamicVars' p (initVars \\ staticInitVars)
 
-blockStaticVars :: BasicBlock -> [VarName] -> [VarName]
-blockStaticVars (BasicBlock _ assgns _) staticVars =
-  map (\(Assignment vn _) -> vn) $
-    filter (\(Assignment _ e) -> exprIsStatic e staticVars) assgns
+programStaticVars :: Program -> [String] -> Expr
+programStaticVars p staticVars = Constant $ varNamesToList $ programStaticVars' p (map VarName staticVars)
 
 exprIsStatic :: Expr -> [VarName] -> Bool
 exprIsStatic e staticVars = isSubsequenceOf (sort (exprVars e)) (sort staticVars)
+
+programVars :: Program -> [VarName]
+programVars (Program initVars blocks) = (map head . group . sort) (initVars ++ join (map blockVars blocks))
+  where
+    blockVars :: BasicBlock -> [VarName]
+    blockVars (BasicBlock _ assgns _) = map (\(Assignment vn _) -> vn) assgns
+
+programDynamicVars' :: Program -> [VarName] -> [VarName]
+programDynamicVars' p@(Program _ blocks) dynamicVars =
+  let dynamicVars' = (map head . group . sort) $ dynamicVars ++ join (map (`blockDynamicVars` dynamicVars) blocks)
+   in if dynamicVars == dynamicVars' then dynamicVars else programDynamicVars' p dynamicVars'
+  where
+    blockDynamicVars :: BasicBlock -> [VarName] -> [VarName]
+    blockDynamicVars (BasicBlock _ assgns _) dynamicVars =
+      map (\(Assignment vn _) -> vn) $
+        filter (\(Assignment _ e) -> exprIsDynamic e dynamicVars) assgns
+
+exprIsDynamic :: Expr -> [VarName] -> Bool
+exprIsDynamic e dynamicVars = (exprVars e `intersect` dynamicVars) /= []
 
 exprVars :: Expr -> [VarName]
 exprVars (Constant _) = []

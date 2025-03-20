@@ -96,3 +96,5 @@ spec_dynamicLabels  :: Spec
 spec_dynamicLabels = describe "dynamicLabels" $ do
   it "interpretes dynamicLabels" $
     (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list[s "init"]
+  it "dynamicLabels of mix" $
+    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list[s "init"]

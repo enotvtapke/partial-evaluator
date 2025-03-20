@@ -28,6 +28,8 @@ spec_divisionCalculator =
   describe "programStaticVars" $ do
     it "programStaticVars of `searchProgram`" $
       programStaticVars' searchProgram [VarName "name", VarName "namelist"] `shouldBe` [VarName "name", VarName "namelist"]
+    it "programStaticVars of `mix`" $
+      programStaticVars' mix [VarName "program", VarName "staticVars"] `shouldBe` VarName <$> ["bb", "command", "cond", "exp", "pp'", "ppFalse", "ppTrue", "pps", "program", "staticVars", "varExpr", "varName"]
 
 spec_search :: Spec
 spec_search =
