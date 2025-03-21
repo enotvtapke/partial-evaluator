@@ -54,11 +54,11 @@ spec_secondProjection =
   describe "secondProjection" $ do
     it "run second proj generated compiler on `replaceFirstOne`" $
       (runProgram mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
-    xit "second proj" $
-      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` unit
+    it "second proj" $
+      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` prog generatedTuringMachineCompilerProgram
     xit "third proj" $
       (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` unit
-    xit "run third proj to generate turing machine compiler" $
+    it "run third proj to generate turing machine compiler" $
       ( runProgram
           mix
           [ prog mix,
@@ -74,7 +74,7 @@ spec_secondProjection =
             ]
         ]
       )
-        `interShouldBe` unit
+        `interShouldBe` prog generatedTuringMachineCompilerProgram
     it "run third proj generated compiler on `replaceFirstOne`" $
       ( runProgram
           compilerGeneratorProgram
