@@ -17,7 +17,7 @@ Use `stack test` to run tests. `third proj` fails because it is ignored. You can
 
 You can find Turing machine compiler generated using second or third projection in [test/Flowchart/TestPrograms.hs](test/Flowchart/TestPrograms.hs). The compiler is the function `generatedTuringMachineCompilerProgram`.
 
-Compiler generator can be used to generate compiler that compiles the following Turing machine program:
+This compile can compile the following Turing machine program:
 ```Haskell
 replaceFirstOne :: Expr
 replaceFirstOne = list [
