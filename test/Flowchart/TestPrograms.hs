@@ -222,25 +222,21 @@ mixedTuringProgram =
   Program
     [VarName "right"]
     [ BasicBlock
-        { label = Label "init",
-          assigns = [Assignment (VarName "left") (Constant (List []))],
-          jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")
-        },
+        (Label "init")
+        [ Assignment (VarName "left") (Constant (List []))
+        ]
+        (If (Eq (Constant (IntLiteral 0)) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")),
       BasicBlock
-        { label = Label "l1",
-          assigns =
-            [ Assignment (VarName "left") (Cons (Hd (Var (VarName "right"))) (Var (VarName "left"))), -- TODO `Constant $ List []` is incorrect because there is no "generalization"
-              Assignment (VarName "right") (Tl (Var (VarName "right")))
-            ],
-          jmp = If (Eq (Constant $ IntLiteral 0) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")
-        },
+        (Label "l1")
+        [ Assignment (VarName "left") (Cons (Hd (Var (VarName "right"))) (Var (VarName "left"))),
+          Assignment (VarName "right") (Tl (Var (VarName "right")))
+        ]
+        (If (Eq (Constant (IntLiteral 0)) (Hd (Var (VarName "right")))) (Label "l0") (Label "l1")),
       BasicBlock
-        { label = Label "l0",
-          assigns =
-            [ Assignment (VarName "right") (Cons (Constant $ IntLiteral 1) (Tl (Var (VarName "right"))))
-            ],
-          jmp = Return (Var (VarName "right"))
-        }
+        (Label "l0")
+        [ Assignment (VarName "right") (Cons (Constant (IntLiteral 1)) (Tl (Var (VarName "right"))))
+        ]
+        (Return (Var (VarName "right")))
     ]
 
 dynamicLabelsProgram :: Program

@@ -59,8 +59,8 @@ spec_secondProjection =
       (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` int 2
     xit "third proj" $
       (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` int 2
-    -- it "run third proj" $
-    --   (runMixed mix [prog mix, list [pair (s "program") (prog mix)]], [list [pair (s "program") (prog turingInterpreter)]]) `interShouldBe` int 2
+    xit "run third proj" $
+      (runMixed mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]], [list [pair (s "program") (prog turingInterpreter)]]) `interShouldBe` int 2
 
 runMixed :: Program -> [Expr] -> Program
 runMixed p args = case runEvalMonad (interpret p args) of

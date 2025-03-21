@@ -30,7 +30,7 @@ data Value
 
 newtype VarName = VarName String deriving (Eq, Hashable, Show, Ord)
 
-data BasicBlock = BasicBlock { label :: Label, assigns :: [Assignment], jmp :: Jump } deriving (Eq, Show)
+data BasicBlock = BasicBlock Label [Assignment] Jump deriving (Eq, Show)
 
 data Assignment = Assignment VarName Expr deriving (Eq, Show)
 

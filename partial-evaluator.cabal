@@ -31,6 +31,7 @@ library
       Flowchart.Interpreter.Builtin
       Flowchart.Interpreter.EvalState
       Flowchart.Interpreter.Interpreter
+      Flowchart.LiveVariablesAnalyser
       Flowchart.Mix
       Lib
       Turing.Interpreter
@@ -72,6 +73,7 @@ test-suite partial-evaluator-test
   main-is: Main.hs
   other-modules:
       Flowchart.InterpreterSpec
+      Flowchart.LiveVariableAnalyserSpec
       Flowchart.MixSpec
       Flowchart.TestPrograms
       TestUtils

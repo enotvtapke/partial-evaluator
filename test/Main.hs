@@ -5,6 +5,7 @@ import Test.Tasty.Hspec (testSpecs)
 import qualified Flowchart.InterpreterSpec as F (interpreterSpec)
 import qualified Turing.InterpreterSpec as T (interpreterSpec) 
 import Flowchart.MixSpec (mixSpec)
+import Flowchart.LiveVariableAnalyserSpec (liveVariableAnalyserSpec)
 
 main :: IO ()
 main = do
@@ -13,6 +14,7 @@ main = do
       <$> mapM
         testSpecs
         [ F.interpreterSpec,
+          liveVariableAnalyserSpec,
           T.interpreterSpec,
           mixSpec
         ]

@@ -1,4 +1,4 @@
-module Flowchart.DivisionCalculator (programStaticVars', programStaticVars, exprIsStatic) where
+module Flowchart.DivisionCalculator (programStaticVars', programStaticVars, exprIsStatic, blockVars, exprVars) where
 
 import Control.Monad (join)
 import Data.List (isSubsequenceOf, sort, group, intersect, (\\))
@@ -18,9 +18,9 @@ exprIsStatic e staticVars = isSubsequenceOf (sort (exprVars e)) (sort staticVars
 
 programVars :: Program -> [VarName]
 programVars (Program initVars blocks) = (map head . group . sort) (initVars ++ join (map blockVars blocks))
-  where
-    blockVars :: BasicBlock -> [VarName]
-    blockVars (BasicBlock _ assgns _) = map (\(Assignment vn _) -> vn) assgns
+
+blockVars :: BasicBlock -> [VarName]
+blockVars (BasicBlock _ assgns _) = map (\(Assignment vn _) -> vn) assgns
 
 programDynamicVars' :: Program -> [VarName] -> [VarName]
 programDynamicVars' p@(Program _ blocks) dynamicVars =
