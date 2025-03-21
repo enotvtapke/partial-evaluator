@@ -56,6 +56,8 @@ data Expr
   | CompressLabels Expr Expr
   | Or Expr Expr
   | DynamicLabels Expr Expr
+  | FilterKeys Expr Expr
+  | ProgLiveVariables Expr
   deriving (Eq, Show)
 
 instance IsString Expr where

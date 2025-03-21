@@ -14,7 +14,8 @@ mix =
         "init"
         [ "pending" @= list [pair (s "init") "vs0"],
           "marked" @= list [],
-          "residual" @= list []
+          "residual" @= list [],
+          "liveVars" @= progLiveVars "program"
         ]
         $ jump "blocksLoop",
       -- Basic Blocks loop
@@ -94,20 +95,22 @@ mix =
         $ jump "commandsLoop",
       bb
         "ifDynamic"
-        [ "code" @= cons (list [s "if", reduce "cond" "vs", toLabel $ pair "ppTrue" "vs", toLabel $ pair "ppFalse" "vs"]) "code"
+        [ "ppTrueLiveVs" @= filterKeys "vs" (lookup "liveVars" "ppTrue"),
+          "ppFalseLiveVs" @= filterKeys "vs" (lookup "liveVars" "ppFalse"),
+          "code" @= cons (list [s "if", reduce "cond" "vs", toLabel $ pair "ppTrue" "ppTrueLiveVs", toLabel $ pair "ppFalse" "ppFalseLiveVs"]) "code"
         ]
-        $ jumpc (member "marked" (pair "ppTrue" "vs") `or` member "pending" (pair "ppTrue" "vs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
+        $ jumpc (member "marked" (pair "ppTrue" "ppTrueLiveVs") `or` member "pending" (pair "ppTrue" "ppTrueLiveVs")) "addPpFalseToPendingCheck" "addPpTrueToPending",
       bb
         "addPpTrueToPending"
-        ["pending" @= cons (pair "ppTrue" "vs") "pending"]
+        ["pending" @= cons (pair "ppTrue" "ppTrueLiveVs") "pending"]
         $ jump "addPpFalseToPendingCheck",
       bb
         "addPpFalseToPendingCheck"
         []
-        $ jumpc (member "marked" (pair "ppFalse" "vs") `or` member "pending" (pair "ppFalse" "vs")) "commandsLoop" "addPpFalseToPending",
+        $ jumpc (member "marked" (pair "ppFalse" "ppFalseLiveVs") `or` member "pending" (pair "ppFalse" "ppFalseLiveVs")) "commandsLoop" "addPpFalseToPending",
       bb
         "addPpFalseToPending"
-        ["pending" @= cons (pair "ppFalse" "vs") "pending"]
+        ["pending" @= cons (pair "ppFalse" "ppFalseLiveVs") "pending"]
         $ jump "commandsLoop",
       -- Return
       bb

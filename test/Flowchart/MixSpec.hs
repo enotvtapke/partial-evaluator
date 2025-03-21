@@ -2,18 +2,16 @@
 
 module Flowchart.MixSpec (mixSpec) where
 
+import Flowchart.AST
 import Flowchart.DSL
+import Flowchart.DivisionCalculator (programStaticVars, programStaticVars')
 import Flowchart.Mix
+import Flowchart.TestPrograms
 import Test.Hspec
 import TestUtils
-import Prelude hiding ((+), (==))
-import Flowchart.TestPrograms
 import Turing.Interpreter (turingInterpreter)
 import Turing.TestPrograms (replaceFirstOne)
-import Flowchart.Interpreter.Interpreter (interpret)
-import Flowchart.AST
-import Flowchart.Interpreter.EvalState (runEvalMonad)
-import Flowchart.DivisionCalculator (programStaticVars, programStaticVars')
+import Prelude hiding ((+), (==))
 
 mixSpec :: Spec
 mixSpec = describe "Mix" $ do
@@ -29,7 +27,7 @@ spec_divisionCalculator =
     it "programStaticVars of `searchProgram`" $
       programStaticVars' searchProgram [VarName "name", VarName "namelist"] `shouldBe` [VarName "name", VarName "namelist"]
     it "programStaticVars of `mix`" $
-      programStaticVars' mix [VarName "program", VarName "staticVars"] `shouldBe` VarName <$> ["bb", "command", "cond", "exp", "pp'", "ppFalse", "ppTrue", "pps", "program", "staticVars", "varExpr", "varName"]
+      programStaticVars' mix [VarName "program", VarName "staticVars"] `shouldBe` VarName <$> ["bb", "command", "cond", "exp", "liveVars", "pp'", "ppFalse", "ppTrue", "pps", "program", "staticVars", "varExpr", "varName"]
 
 spec_search :: Spec
 spec_search =
@@ -40,7 +38,8 @@ spec_search =
       (mix, [prog searchProgram, programStaticVars searchProgram ["name", "namelist"], list [pair (s "name") (s "c"), pair (s "namelist") $ list [s "b", s "a", s "c"]]]) `interShouldBe` prog mixedSearchProgram
 
 spec_turing_machine :: Spec
-spec_turing_machine =  describe "turing machine mix" $ do
+spec_turing_machine =
+  describe "turing machine mix" $ do
     it "mixes turing machine interpreter" $
       (mix, [prog turingInterpreter, programStaticVars turingInterpreter ["q"], list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
 
@@ -53,15 +52,37 @@ spec_descrToProg =
 spec_secondProjection :: Spec
 spec_secondProjection =
   describe "secondProjection" $ do
-    it "run second proj" $
-      (runMixed mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
+    it "run second proj generated compiler on `replaceFirstOne`" $
+      (runProgram mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
     xit "second proj" $
-      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` int 2
+      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` unit
     xit "third proj" $
-      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` int 2
-    xit "run third proj" $
-      (runMixed mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]], [list [pair (s "program") (prog turingInterpreter)]]) `interShouldBe` int 2
-
-runMixed :: Program -> [Expr] -> Program
-runMixed p args = case runEvalMonad (interpret p args) of
-  Right (Prog p) -> p
+      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` unit
+    xit "run third proj to generate turing machine compiler" $
+      ( runProgram
+          mix
+          [ prog mix,
+            programStaticVars mix ["program", "staticVars"],
+            list
+              [ pair (s "program") (prog mix),
+                pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])
+              ]
+          ],
+        [ list
+            [ pair (s "program") (prog turingInterpreter),
+              pair (s "staticVars") (programStaticVars turingInterpreter ["q"])
+            ]
+        ]
+      )
+        `interShouldBe` unit
+    it "run third proj generated compiler on `replaceFirstOne`" $
+      ( runProgram
+          compilerGeneratorProgram
+          [ list
+              [ pair (s "program") (prog turingInterpreter),
+                pair (s "staticVars") (programStaticVars turingInterpreter ["q"])
+              ]
+          ],
+        [list [pair (s "q") replaceFirstOne]]
+      )
+        `interShouldBe` prog mixedTuringProgram

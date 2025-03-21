@@ -22,11 +22,17 @@ module Flowchart.TestPrograms
     searchProgram,
     mixedTuringProgram,
     dynamicLabelsProgram,
+    progLiveVarsProgram,
+    filterKeysProgram,
+    compilerGeneratorProgram,
   )
 where
 
 import Flowchart.AST
 import Flowchart.DSL
+import Flowchart.DivisionCalculator (programStaticVars)
+import Flowchart.Mix (mix)
+import TestUtils (runProgram)
 import Prelude hiding (lookup, (+), (==))
 
 returnTwo :: Program
@@ -141,6 +147,18 @@ memberProgram =
     ["e"]
     [bb "init" ["x" @= list [s "a", s "b", s "c", s "d"]] $ ret $ member "x" "e"]
 
+filterKeysProgram :: Program
+filterKeysProgram =
+  program
+    ["a", "b"]
+    [bb "init" [] $ ret $ filterKeys "a" "b"]
+
+progLiveVarsProgram :: Program
+progLiveVarsProgram =
+  program
+    ["p"]
+    [bb "init" [] $ ret $ progLiveVars "p"]
+
 reduceProgram :: Program
 reduceProgram =
   program
@@ -244,3 +262,15 @@ dynamicLabelsProgram =
   program
     ["prog", "staticVars"]
     [bb "init" [] $ ret $ dynamicLabels "prog" "staticVars"]
+
+compilerGeneratorProgram :: Program
+compilerGeneratorProgram =
+  runProgram
+    mix
+    [ prog mix,
+      programStaticVars mix ["program", "staticVars"],
+      list
+        [ pair (s "program") (prog mix),
+          pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])
+        ]
+    ]

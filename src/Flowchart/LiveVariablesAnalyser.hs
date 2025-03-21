@@ -1,49 +1,42 @@
-{-# LANGUAGE TupleSections #-}
-
 module Flowchart.LiveVariablesAnalyser (liveVariables) where
 
-import Control.Monad.State.Lazy
+import Control.Monad.Identity (Identity (runIdentity))
 import qualified Data.HashMap.Internal.Strict as M
-import Data.List (nub, sort, union, (\\))
+import Data.List (group, sort, union, (\\))
 import Flowchart.AST
-import Flowchart.DivisionCalculator (blockVars, exprVars)
-import Flowchart.Mix (mix)
-import Text.Printf (printf)
+import Flowchart.DivisionCalculator (exprVars)
 
-blocksToMap :: [BasicBlock] -> M.HashMap Label BasicBlock
-blocksToMap bbs = M.fromList $ map (\b@(BasicBlock l _ _) -> (l, b)) bbs
+type PointId = (Label, Int)
 
-referrences :: BasicBlock -> [VarName]
-referrences (BasicBlock _ assgns _) = nub $ join $ map (\(Assignment _ expr) -> exprVars expr) assgns
-
-definitions :: BasicBlock -> [VarName]
-definitions = nub . blockVars
-
-successors :: BasicBlock -> [Label]
-successors (BasicBlock _ _ jump) =
-  case jump of
-    Goto l -> [l]
-    If _ l1 l2 -> [l1, l2]
-    Return _ -> []
-
-type LiveMonad = State (M.HashMap Label [VarName])
-
-live :: M.HashMap Label BasicBlock -> Label -> LiveMonad ()
-live labelToBlock lab = do
-  successorsLive <- join <$> mapM (\l -> gets (`unsafeLookup` l)) (successors block)
-  modify (M.insert lab ((nub successorsLive \\ definitions block) `union` referrences block))
-  where
-    block = unsafeLookup labelToBlock lab
-    unsafeLookup m k = case m M.!? k of
-      Just v -> v
-      Nothing -> error $ printf "Key `%s` not found" (show k)
-
-lives :: M.HashMap Label BasicBlock -> LiveMonad (M.HashMap Label [VarName])
-lives labelToBlock = do
-  living <- get
-  mapM_ (live labelToBlock) (sort (M.keys labelToBlock))
-  living' <- get
-  if living == living' then return living' else lives labelToBlock
+data Point = Point {pointId :: PointId, pointDefs :: [VarName], pointRefs :: [VarName], successorsIds :: [PointId]}
 
 liveVariables :: Program -> M.HashMap Label [VarName]
-liveVariables (Program _ blocks) = evalState (lives (blocksToMap blocks)) (M.fromList $ map (,[]) (M.keys $ blocksToMap blocks))
+liveVariables (Program _ blocks) = M.mapKeys fst $ M.filterWithKey (\pid _ -> snd pid == 0) $ lives M.empty (concatMap blockToPoints blocks)
+
+lives :: M.HashMap PointId [VarName] -> [Point] -> M.HashMap PointId [VarName]
+lives liveVarsPerPoint points = runIdentity $ do
+  let liveVarsPerPoint' = foldr updateLiveVars liveVarsPerPoint points
+  return $ if liveVarsPerPoint' == liveVarsPerPoint then liveVarsPerPoint else lives liveVarsPerPoint' points
+  where
+    updateLiveVars :: Point -> M.HashMap PointId [VarName] -> M.HashMap PointId [VarName]
+    updateLiveVars p liveVars = M.insert (pointId p) (live p (\k -> M.lookupDefault [] k liveVars)) liveVars
+
+live :: Point -> (PointId -> [VarName]) -> [VarName]
+live point f = (successorsLive \\ pointDefs point) `union` pointRefs point
+  where
+    successorsLive = unique $ concatMap f (successorsIds point)
+
+blockToPoints :: BasicBlock -> [Point]
+blockToPoints (BasicBlock lab assigns jmp) = runIdentity $ do
+  let assignsPoints = zipWith (\i (Assignment varName varExpr) -> Point (lab, i) [varName] (refs varExpr) [(lab, i + 1)]) [0 .. length assigns - 1] assigns
+  let jmpPoint = case jmp of
+        Goto l1 -> Point (lab, length assignsPoints) [] [] [(l1, 0)]
+        If c l1 l2 -> Point (lab, length assignsPoints) [] (refs c) [(l1, 0), (l2, 0)]
+        Return e -> Point (lab, length assignsPoints) [] (refs e) []
+  return $ assignsPoints ++ [jmpPoint]
+
+refs :: Expr -> [VarName]
+refs e = unique $ exprVars e
+
+unique :: (Ord a) => [a] -> [a]
+unique a = map head (group (sort a))

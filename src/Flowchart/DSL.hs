@@ -39,6 +39,8 @@ module Flowchart.DSL
     compressLabels,
     or,
     dynamicLabels,
+    progLiveVars,
+    filterKeys,
   )
 where
 
@@ -166,6 +168,12 @@ compressLabels = CompressLabels
 
 or ::  Expr -> Expr -> Expr
 or = Or
+
+filterKeys ::  Expr -> Expr -> Expr
+filterKeys = FilterKeys
+
+progLiveVars :: Expr -> Expr
+progLiveVars = ProgLiveVariables
 
 -- DSL for values
 

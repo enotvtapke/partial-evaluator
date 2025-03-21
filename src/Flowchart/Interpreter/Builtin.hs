@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+
 module Flowchart.Interpreter.Builtin
   ( plus,
     eq,
@@ -16,21 +17,24 @@ module Flowchart.Interpreter.Builtin
     or,
     dynamicLabels,
     isStatic,
+    filterKeys,
+    progLiveVariables,
   )
 where
 
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
-import Data.List (find, isSubsequenceOf, (\\), group, sort)
-import Flowchart.AST
-import Flowchart.DSL (ev, listv, sv)
-import Flowchart.Interpreter.EvalState
-import Prelude hiding (or, lookup)
+import Data.Bifunctor (second)
+import qualified Data.HashMap.Lazy as M
+import Data.List (find, group, isSubsequenceOf, sort, (\\))
 import qualified Data.List as L
 import Data.Maybe (fromMaybe)
-import qualified Data.HashMap.Lazy as M
-import Data.Bifunctor (second)
+import Flowchart.AST
+import Flowchart.DSL (ev, listv, sv)
 import Flowchart.DivisionCalculator (exprIsStatic)
+import Flowchart.Interpreter.EvalState
+import Flowchart.LiveVariablesAnalyser (liveVariables)
+import Prelude hiding (lookup, or)
 
 plus :: Value -> Value -> EvalMonad Value
 plus (IntLiteral x) (IntLiteral y) = return $ IntLiteral $ x + y
@@ -69,12 +73,8 @@ insert p k v = lift $ throwE $ IncorrectArgsTypes [p, k, v] "in `insert` args"
 
 lookup :: Value -> Value -> EvalMonad Value
 lookup (List l) k = do
-  ml <- mapM go l
+  ml <- mapM valueToPair l
   return $ fromMaybe Unit (L.lookup k ml)
-  where
-    go :: Value -> EvalMonad (Value, Value)
-    go (List [a, b]) = return (a, b)
-    go x = lift $ throwE $ IncorrectArgsTypes [x] "in `lookup` args"
 lookup p k = lift $ throwE $ IncorrectArgsTypes [p, k] "in `lookup` args"
 
 or :: Value -> Value -> EvalMonad Value
@@ -97,7 +97,7 @@ commands (Prog (Program _ body)) (StringLiteral l) = commandsByBlock <$> findBlo
 commands x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `commands`"
 
 dynamicLabels :: Value -> Value -> EvalMonad Value
-dynamicLabels (Prog (Program _ bbs )) staticVars = do
+dynamicLabels (Prog (Program _ bbs)) staticVars = do
   v <- valueToVarNames staticVars
   return $ List $ (\(Label l) -> StringLiteral l) <$> map head ((group . sort) (Label "init" : getLabels v bbs))
   where
@@ -161,7 +161,7 @@ descrToProg x y z = lift $ throwE $ IncorrectArgsTypes [x, y, z] "in `commandToP
 compressLabels :: Value -> Value -> EvalMonad Value
 compressLabels (StringLiteral s) (Prog p) = return $ Prog $ evalState (compressLabelsProg p (Label s)) (0, M.empty)
   where
-    compressLabelsProg :: Program -> Label ->  State (Int, M.HashMap Label Label) Program
+    compressLabelsProg :: Program -> Label -> State (Int, M.HashMap Label Label) Program
     compressLabelsProg (Program x bbs) initLabel = do
       modify (second (M.insert initLabel (Label "init")))
       Program x <$> mapM compressLabelsBb bbs
@@ -190,10 +190,29 @@ isStatic :: Value -> Value -> EvalMonad Value
 isStatic (Expr e) staticVarNames = BoolLiteral . exprIsStatic e <$> valueToVarNames staticVarNames
 isStatic x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `isStatic` args"
 
-valueToVarNames :: Value ->  EvalMonad [VarName]
+valueToVarNames :: Value -> EvalMonad [VarName]
 valueToVarNames (List names) = mapM valueToVarName names
   where
     valueToVarName :: Value -> EvalMonad VarName
     valueToVarName (StringLiteral n) = return $ VarName n
     valueToVarName x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarName` args"
 valueToVarNames x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToVarNames` args"
+
+progLiveVariables :: Value -> EvalMonad Value
+progLiveVariables (Prog p) =
+  return $
+    List $
+      map (\(Label l, v) -> List [StringLiteral l, v]) $
+        M.toList $
+          M.map (List . map (\(VarName vName) -> StringLiteral vName)) (liveVariables p)
+progLiveVariables x = lift $ throwE $ IncorrectArgsTypes [x] "in `liveVariables` args"
+
+filterKeys :: Value -> Value -> EvalMonad Value
+filterKeys (List mapEntries) (List l2) = do
+  entries <- mapM valueToPair mapEntries
+  return $ List $ L.map (\(a, b) -> List [a, b]) $ L.filter (\(a, _) -> a `elem` l2) entries
+filterKeys x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `intersect` args"
+
+valueToPair :: Value -> EvalMonad (Value, Value)
+valueToPair (List [a, b]) = return (a, b)
+valueToPair x = lift $ throwE $ IncorrectArgsTypes [x] "in `valueToPair` args"

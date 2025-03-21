@@ -86,6 +86,8 @@ reduceExpr (ToLabel l) = reduceUnExpr l ToLabel toLabel
 reduceExpr (DynamicLabels p staticVarNames) = reduceBinExpr p staticVarNames DynamicLabels dynamicLabels
 reduceExpr (CompressLabels prog initL) = reduceBinExpr prog initL CompressLabels compressLabels
 reduceExpr (Or a b) = reduceBinExpr a b Or or
+reduceExpr (FilterKeys a b) = reduceBinExpr a b FilterKeys filterKeys
+reduceExpr (ProgLiveVariables a) = reduceUnExpr a ProgLiveVariables progLiveVariables
 
 reduceUnExpr :: Expr -> (Expr -> Expr) -> (Value -> EvalMonad Value) -> EvalMonad Expr
 reduceUnExpr e c f =

@@ -28,9 +28,9 @@ programDynamicVars' p@(Program _ blocks) dynamicVars =
    in if dynamicVars == dynamicVars' then dynamicVars else programDynamicVars' p dynamicVars'
   where
     blockDynamicVars :: BasicBlock -> [VarName] -> [VarName]
-    blockDynamicVars (BasicBlock _ assgns _) dynamicVars =
+    blockDynamicVars (BasicBlock _ assgns _) dynVars =
       map (\(Assignment vn _) -> vn) $
-        filter (\(Assignment _ e) -> exprIsDynamic e dynamicVars) assgns
+        filter (\(Assignment _ e) -> exprIsDynamic e dynVars) assgns
 
 exprIsDynamic :: Expr -> [VarName] -> Bool
 exprIsDynamic e dynamicVars = (exprVars e `intersect` dynamicVars) /= []
@@ -57,3 +57,5 @@ exprVars (ToLabel e1) = exprVars e1
 exprVars (DynamicLabels e1 e2) = exprVars e1 ++ exprVars e2
 exprVars (CompressLabels e1 e2) = exprVars e1 ++ exprVars e2
 exprVars (Or e1 e2) = exprVars e1 ++ exprVars e2
+exprVars (FilterKeys e1 e2) = exprVars e1 ++ exprVars e2
+exprVars (ProgLiveVariables e1) = exprVars e1

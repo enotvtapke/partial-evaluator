@@ -3,11 +3,11 @@
 module Flowchart.InterpreterSpec (interpreterSpec) where
 
 import Flowchart.DSL
+import Flowchart.DivisionCalculator (programStaticVars)
 import Flowchart.TestPrograms
 import Test.Hspec
 import TestUtils
 import Prelude hiding ((+), (==))
-import Flowchart.DivisionCalculator (programStaticVars)
 
 interpreterSpec :: Spec
 interpreterSpec = describe "Flowchart Interpreter" $ do
@@ -18,6 +18,7 @@ interpreterSpec = describe "Flowchart Interpreter" $ do
   spec_reduce
   spec_commands
   spec_dynamicLabels
+  spec_progLiveVars
 
 spec_basic :: Spec
 spec_basic =
@@ -62,6 +63,8 @@ spec_map = describe "map" $ do
     (lookupProgram, [pair (s "c") (int 10)]) `interShouldBe` s "cv"
   it "interpretes lookup when value not found" $
     (lookupProgram, [pair (s "d") (int 10)]) `interShouldBe` unit
+  it "interpretes filterKeys" $
+    (filterKeysProgram, [list [list[s "d", s "dv"], list [s "c", s "cv"], list[s "a", s "av"], list [s "b", s "bv"]], list [s "a", s "d"]]) `interShouldBe` list [list [s "d", s "dv"], list[s "a", s "av"]]
 
 spec_reduce :: Spec
 spec_reduce = describe "reduce" $ do
@@ -92,9 +95,19 @@ spec_commands = describe "commands" $ do
           list [s "return", expr "m"]
         ]
 
-spec_dynamicLabels  :: Spec
+spec_dynamicLabels :: Spec
 spec_dynamicLabels = describe "dynamicLabels" $ do
   it "interpretes dynamicLabels" $
-    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list[s "init"]
+    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list [s "init"]
   it "dynamicLabels of mix" $
-    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list[s "init"]
+    (dynamicLabelsProgram, [prog caseProgram, programStaticVars caseProgram ["operator"]]) `interShouldBe` list [s "init"]
+
+spec_progLiveVars :: Spec
+spec_progLiveVars = describe "progLiveVars" $ do
+  it "interpretes progLiveVars" $
+    (progLiveVarsProgram, [prog indexOf])
+      `interShouldBe` list
+        [ list [s "ret", list [s "x"]],
+          list [s "init", list [s "el", s "list"]],
+          list [s "loop", list [s "el", s "list", s "x"]]
+        ]
