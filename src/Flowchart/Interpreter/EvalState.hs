@@ -6,16 +6,16 @@ module Flowchart.Interpreter.EvalState
     getLabel,
     getVar,
     runEvalMonad,
-    EvalState(..),
+    EvalState (..),
     getVarMaybe,
   )
 where
 
+import Control.Monad.Except (Except, runExcept)
 import Control.Monad.State.Lazy
-import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
+import Control.Monad.Trans.Except (throwE)
 import qualified Data.HashMap.Lazy as M
 import Flowchart.AST
-import GHC.IO (unsafePerformIO)
 
 data EvalState = EvalState {vars :: M.HashMap VarName Value, labels :: M.HashMap Label BasicBlock}
 
@@ -32,10 +32,10 @@ data Error
   | InvalidStaticVars [VarName]
   deriving (Show, Eq)
 
-type EvalMonad = StateT EvalState (ExceptT Error IO)
+type EvalMonad = StateT EvalState (Except Error)
 
 runEvalMonad :: EvalMonad a -> Either Error a
-runEvalMonad m = unsafePerformIO $ runExceptT $ evalStateT m (EvalState M.empty M.empty)
+runEvalMonad m = runExcept $ evalStateT m (EvalState M.empty M.empty)
 
 putLabel :: Label -> BasicBlock -> EvalMonad ()
 putLabel l bb = modify (\st -> EvalState (vars st) (M.insert l bb (labels st)))

@@ -8,17 +8,16 @@ module Flowchart.Interpreter.Interpreter
   )
 where
 
+import Control.Monad.Except (runExcept)
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Except (throwE)
 import qualified Data.HashMap.Lazy as M
 import Data.List (uncons)
+import Debug.Trace (trace)
 import Flowchart.AST
 import Flowchart.Interpreter.Builtin
 import Flowchart.Interpreter.EvalState
-import Prelude hiding (or, lookup)
-import GHC.IO (unsafePerformIO)
-import Control.Monad.Except (runExceptT)
-import Debug.Trace (trace)
+import Prelude hiding (lookup, or)
 
 interpretValues :: Program -> [Value] -> EvalMonad Value
 interpretValues p values = interpret p (Constant <$> values)
@@ -118,8 +117,10 @@ reduceTerExpr e1 e2 e3 c f = do
 
 eval :: Value -> Value -> EvalMonad Value
 eval (Expr e) vars = do
-  Expr ee <- reduce (Expr e) vars
-  exprToVal ee
+  ee <- reduce (Expr e) vars
+  case ee of
+    (Expr ee') -> exprToVal ee'
+    _ -> lift $ throwE $ IncorrectArgsTypes [ee] "in `eval`"
 eval x y = lift $ throwE $ IncorrectArgsTypes [x, y] "in `eval` args"
 
 reduce :: Value -> Value -> EvalMonad Value
@@ -132,7 +133,7 @@ reduce (Expr e) vars = do
       Right v -> return v
       Left err -> lift $ throwE err
       where
-        runWithVars m vs = unsafePerformIO $ runExceptT $ evalStateT m (EvalState vs M.empty)
+        runWithVars m vs = runExcept $ evalStateT m (EvalState vs M.empty)
 
     varsToMap :: Value -> EvalMonad (M.HashMap VarName Value)
     varsToMap (List l) = M.fromList <$> mapM go l
