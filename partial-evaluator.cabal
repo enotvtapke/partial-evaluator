@@ -33,7 +33,6 @@ library
       Flowchart.Interpreter.Interpreter
       Flowchart.LiveVariablesAnalyser
       Flowchart.Mix
-      Lib
       Turing.Interpreter
   other-modules:
       Paths_partial_evaluator

@@ -2,6 +2,10 @@
 
 Flowchart partial evaluator written in Flowchart. Partial evaluator is self applicable and is used to generate compiler generator using third Futamura projection. Compiler generator generates compilers written in Flowchart based on interpreters written in Flowchart. As an example a compiler for Turing machine language is generated using its interpreter. 
 
+Implementation based on the book [Partial Evaluation and Automatic Program Generation](https://studwww.itu.dk/~sestoft/pebook/jonesgomardsestoft-a4.pdf).
+
+There is no parser for Flowchart language, all Flowchart programs should be described in DSL. There is also no pretty printer for Flowchart.
+
 ### Locations of key code:
 
 * Flowcahrt AST: [src/Flowchart/AST.hs](src/Flowchart/AST.hs).
@@ -11,13 +15,18 @@ Flowchart partial evaluator written in Flowchart. Partial evaluator is self appl
 
 ### Usage
 
-Use `stack test` to run tests. `third proj` fails because it is ignored. You can make it not ignored by changing `xit` to `it`. In this case you can see compiler generator that was generated using third projection (but it is huge).
+* Use `stack test` to run tests.
+* Use `stack run` to print third Futamura projection compiler generator for Flowchart programming language to standart output (it is huge).
 
 ### Result overview
 
-You can find Turing machine compiler generated using second or third projection in [test/Flowchart/TestPrograms.hs](test/Flowchart/TestPrograms.hs). The compiler is the function `generatedTuringMachineCompilerProgram`.
+You can find Turing machine compiler generated using second or third projection (both projections output the same compiler) in [test/Flowchart/TestPrograms.hs](test/Flowchart/TestPrograms.hs). The compiler is the function `generatedTuringMachineCompilerProgram`.
 
-This compile can compile the following Turing machine program:
+All the projections run quite fast: 
+* ~0.17s third projection
+* ~0.02s second projection
+
+Generated compiler compiles the following Turing machine program:
 ```Haskell
 replaceFirstOne :: Expr
 replaceFirstOne = list [

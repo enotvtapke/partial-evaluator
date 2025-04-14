@@ -20,6 +20,7 @@ mixSpec = describe "Mix" $ do
   spec_descrToProg
   spec_turing_machine
   spec_secondProjection
+  spec_thirdProjection
 
 spec_divisionCalculator :: Spec
 spec_divisionCalculator =
@@ -56,8 +57,10 @@ spec_secondProjection =
       (runProgram mix [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]], [list [pair (s "q") replaceFirstOne]]) `interShouldBe` prog mixedTuringProgram
     it "second proj" $
       (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog turingInterpreter), pair (s "staticVars") (programStaticVars turingInterpreter ["q"])]]) `interShouldBe` prog generatedTuringMachineCompilerProgram
-    xit "third proj" $
-      (mix, [prog mix, programStaticVars mix ["program", "staticVars"], list [pair (s "program") (prog mix), pair (s "staticVars") (programStaticVars mix ["program", "staticVars"])]]) `interShouldBe` unit
+
+spec_thirdProjection :: Spec
+spec_thirdProjection =
+  describe "thirdProjection" $ do
     it "run third proj to generate turing machine compiler" $
       ( runProgram
           mix
